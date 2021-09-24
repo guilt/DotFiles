@@ -1,0 +1,19 @@
+# ~/.bashrc-session
+# shellcheck disable=SC2148,SC2236
+
+#Session Setup
+SESS_CMD=$(which screen 2>/dev/null)
+SESS_ID=disabled
+
+CLICOLOR=1
+TERM=xterm
+export CLICOLOR
+export TERM
+
+if [ ! -z "$SESS_CMD" ] ; then
+	if [ -z "$SESS_ID" ] ; then
+		export SESS_ID=started
+		exec screen -DRR
+		echo "Unable to start session."
+	fi
+fi

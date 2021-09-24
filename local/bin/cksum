@@ -1,0 +1,51 @@
+#!/bin/sh
+# shellcheck disable=SC2166,SC2236
+
+md5_md5sum() {
+	md5sum "$@" | cut -d " " -f 1
+}
+
+md5_openssl(){
+	openssl md5 "$@" | cut -d = -f 2 | cut -c2-  | cut -d " " -f 1
+}
+
+md5_bsd(){
+	md5 "$@" | cut -d = -f 2 | cut -c 2- | cut -d " " -f 1
+}
+
+sha1_sha1sum(){
+	sha1sum "$@" | cut -d " " -f 1
+}
+
+sha1_openssl(){
+	openssl sha1 "$@" | cut -d = -f 2 | cut -c2- | cut -d " " -f 1
+}
+
+sha1_bsd(){
+	shasum "$@" | cut -d " " -f 1
+}
+
+MD5SUM=
+which md5sum >/dev/null 2>&1 && MD5SUM=md5_md5sum
+which md5 >/dev/null 2>&1 && MD5SUM=md5_bsd
+which openssl >/dev/null 2>&1 && MD5SUM=md5_openssl
+[ -z $MD5SUM ] && { echo "MD5 Sum utility not found ..." ; exit 1; }
+
+SHA1SUM=
+which sha1sum >/dev/null 2>&1 || SHA1SUM=sha1_sha1sum
+which shasum >/dev/null 2>&1 && SHA1SUM=sha1_bsd
+which openssl >/dev/null 2>&1 && SHA1SUM=sha1_openssl
+[ -z $SHA1SUM ] && { echo "SHA1 Sum utility not found ..." ; exit 1; }
+
+FILE=$1
+[ -z "$FILE" ] && { echo "No File Specified." ; exit 1; }
+
+while [ ! -z "$FILE" ]; do
+	if [ -e "$FILE" -a ! -d "$FILE" ] ; then
+		echo "$FILE"
+		$MD5SUM "$FILE" | tee "$FILE".md5
+		$SHA1SUM "$FILE" | tee "$FILE".sha1
+	fi
+	shift
+	FILE=$1
+done

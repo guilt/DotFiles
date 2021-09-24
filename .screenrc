@@ -1,0 +1,106 @@
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= #
+
+### Created by Brad Sims <bsims@abnt.org> 25/06/2004 
+
+### I got tired of .screenrc's on the internet being so 
+### poorly commented... So being a good GNUbie I took matters
+### into my own hands; and wrote this dotfile.
+
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= #
+
+##    Explanation of hardstatus line    ##
+
+# Ignore the ' marks if you use these examples for yourself
+
+# Note that if you want to use the color brown under konsole
+# You actually use bright yellow (%{Y}). 
+
+# Note the embeded space after the colon, I feel 
+#  it just looks nicer with a blank between the
+#  text and console edge:
+#   '%{=b}%{G} Screen(s): '
+
+# This prints the window listing in blue:
+#   '%{b}%w'
+
+# This right-aligns what follows:
+#   '%='
+
+# This displays the time (hours and minutes) in 12hr format 
+# and adds an AM/PM flag, in bold green:
+#   '%{G}%C%A'
+
+# This displays the day of the week:
+#   '%D'
+
+#This displays the date in Mon/day/year format:
+# and again I embeded a space to give me one space
+# between the text and console edge:
+#  '%M/%d/%Y '
+
+# The resulting command give you a status line that 
+#  looks like this: 
+#   | Screen(s): 0* bash  <blanks zapped>         5:30PM  Fri, Jun/25/2004 |
+#  (The pipes indicate the edges of the xterm/console).
+
+# Green text, time, and date; windows in blue:
+hardstatus on
+#hardstatus alwayslastline "%{=b}%{G} Screen(s): %{b}%w %=%{kG}%C%A  %D, %M/%d/%Y "
+hardstatus string "%w%=%m/%d %c"
+hardstatus string "%{wk} %{B}G%{R}o%{Y}o%{B}g%{G}l%{R}e%{w} %{.d}"
+hardstatus string '%{= dK}%-Lw%{= dW}%50>%n%f* %t%{= dK}%+Lw%< %{= kG}%-=%D %d %M %Y %c:%s%{-}' 
+hardstatus string "%{wk}%{kW}|%{-} {%{Yk}%D %m-%d-%y%{-} %{Wk}%C%a%{-}} {%{Gk}%H%{-} %l} %{kW}|%{-}%{wb} %-w %{Wr}[%n %t]%{-} %+w%=%{kW}|%{-}"
+hardstatus string "%{= KW}%-w%{b}{= wk}%50>%n %t%{-}%+w%< %=%{W}%C%A %D,%d %M"
+hardstatus alwayslastline
+hardstatus alwayslastline "%{= KW}%-w%{= wk}%50>%n %t%{-}%+w%< %=%{W}%C%A %D,%d %M"
+#hardstatus alwayslastline "%{= KW}%-w%{= wk}%50>%n %t%{+}%+w %=%{G}%C%A %D,%d %M"
+
+
+#hardstatus string '%{gk}[ %{G}%H %{g}][%= %{wk}%?%-Lw%?%{=b kR} (%{W}%n*%f %t%?(%u)%?%{=b kR})%{= kw}%?%+Lw%?%?%= %{g}][%{Y}%l%{g}] %{=b C}[ %m/%d %c ]%{W}'
+#hardstatus string '%99`%{= kw} %100`%112`%= %102`%101`%114`%115`%108`%113`%119`%117`%118`%116`%106`%104`%103`%105`%107`%Y-%m-%d %0c:%s'
+#caption always "%{wk}%?%-Lw%?%{bw}%n*%f %t%?(%u)%?%{wk}%?%+Lw%? %= %{= kw}%110`%109`%111`"
+#hardstatus alwayslastline "%{= KW}%-w%{= wk}%50>%n %t%{-}%+w%< (%{W}%n*%f %t%?(%u)%?%{=b kR})%=%{W}%C%A %D,%d %M"
+
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= #
+
+##    Some general options    ##
+
+# Turn off start message:
+startup_message off
+autodetach on
+
+# Set messages timeout to one second: 
+msgwait 1
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= #
+
+##    Keybindings    ##
+
+# bind F7  to detach screen session from this terminal
+# bind F8  to kill current screen window.
+# bind F9  to create a new scree
+# bind F10 to rename current screen window
+# bind F11 to move to previous window
+# bind F12 to move to next window
+bindkey -k k5 copy
+#bindkey -k k6 paste
+bindkey -k k6 other
+bindkey -k k7 detach
+bindkey -k k8 kill
+bindkey -k k9 screen
+bindkey -k k; title
+bindkey -k F1 prev
+bindkey -k F2 next
+
+#escape `e
+
+vbell off
+defscrollback 30000
+#deflogin off # Show only one login in finger
+termcapinfo xterm ti@:te@
+# From http://www4.informatik.uni-erlangen.de/~jnweiger/screen-faq.html
+# # Q: My xterm scrollbar does not work with screen.
+# # A: The problem is that xterm will not allow scrolling if the alternate text buffer is selected. The standard definitions of the termcap initialize capabilities ti and te switch to and from the alternate text buffer. (The scrollbar also does not work when you start e.g. .vi.). You can tell screen not to use these initialisations by adding the line .termcapinfo xterm ti@:te@. to your ~/.screenrc file. 
+
+
+
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= #

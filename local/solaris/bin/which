@@ -1,0 +1,16 @@
+#!/bin/sh
+
+for which in /bin/which /usr/bin/which /usr/local/bin/which ; do
+	[ -x $which ] &&  {
+		output=$($which "$@" 2>&1)
+		count=$(echo "$output" | grep -w no | grep -c -w in)
+		if [ "$count" = 0 ] ; then
+			echo "$output"
+			exit 0 
+		else
+			echo "$output" >&2
+			exit 255
+		fi
+	}
+done
+exit 255

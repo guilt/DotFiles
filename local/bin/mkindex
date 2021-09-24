@@ -1,0 +1,27 @@
+#!/bin/sh
+
+createIndex() {
+	cwd=$(pwd)
+	dir="$1"
+	[ -z "$dir" ] && dir=$(pwd)
+	cd "$dir" || exit
+	[ -f index.html ] || \
+	{
+	echo '<html><head><title>Directory Listing</title></head><body><h3>Directory Listing</h3><br/>'
+        # shellcheck disable=SC2012
+	ls | while read -r file ; do
+		if [ -d "$file" ] ; then
+                        # shellcheck disable=SC2086
+			echo '<a href="'$file'/">'$file'/</a><br/>'
+			createIndex "$file"
+		else
+                        # shellcheck disable=SC2086
+			[ "$file" = "index.html" ] || echo '<a href="'$file'">'$file'</a><br/>'
+		fi
+	done
+	echo '</body></html>'
+	} > index.html
+	cd "$cwd" || exit
+}
+
+createIndex "$@"

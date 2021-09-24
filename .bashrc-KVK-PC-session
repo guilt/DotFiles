@@ -1,0 +1,5 @@
+# ~/.bashrc-KVK-PC-session
+# shellcheck disable=SC2148
+
+# KVK-PC setup
+neofetch

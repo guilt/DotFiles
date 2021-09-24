@@ -1,0 +1,20 @@
+#!/bin/sh
+# shellcheck disable=SC2016
+
+which curl >/dev/null 2>&1 && CMD="curl -C - -f -O"
+which wget >/dev/null 2>&1 && CMD="wget -c"
+which proz >/dev/null 2>&1 && CMD="proz -k=10 -r"
+[ -z "$CMD" ] && echo "Unable to find downloader." && exit
+which socksify >/dev/null 2>&1 && CMD="socksify $CMD"
+echo 'Enter URLs and type ^D to end'
+{
+echo '#!/bin/sh'
+echo 'for i in $(cat <<EOF'
+cat
+echo 'EOF) ; do '
+echo "$CMD"' $i || exit ;'
+echo 'done'
+echo 'rm $0'
+} > list
+chmod +x list
+echo 'Type ./list to download later'

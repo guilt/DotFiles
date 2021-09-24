@@ -1,0 +1,4 @@
+This is a simple plain text file
+for SPU-side stdio testings.
+
+Cheers!

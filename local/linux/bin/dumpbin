@@ -1,0 +1,25 @@
+#!/bin/sh
+# shellcheck disable=SC2166
+
+FILE="$1"
+shift
+
+[ -z "$FILE" ] && exit
+[ -f "$FILE" ] || exit
+
+CMD="$1"
+[ -z "$CMD" ] && CMD=/dependents
+
+CMD=$(echo "$CMD" | sed "s/\///g")
+CMD=$(echo "$CMD" | sed "s/\-//g")
+
+if [ "$CMD" = "dependents" -o "$CMD" = "deps" ] ; then
+	strings "$FILE" | grep -F .so | 
+	while read -r soname ; do
+		basename "$soname" | cut -d . -f 1 
+	done | sort -u
+elif [ "$CMD" = "symbols" -o "$CMD" = "syms" ] ; then
+	objdump -T -t "$FILE" | grep -v "$FILE" | cut -c 48- | sed 's/ //g' | grep -v ^$ | sort -u
+elif [ "$CMD" = "relocations" -o "$CMD" = "relocs" ] ; then
+	objdump -R -r "$FILE" | sort -u
+fi

@@ -1,0 +1,8 @@
+#!/bin/sh
+
+ARCHNAME="$1"
+shift
+
+for p7z in 7z 7za 7zr p7z ; do
+    which $p7z >/dev/null 2>&1 && exec $p7z x "$@" "$ARCHNAME"
+done

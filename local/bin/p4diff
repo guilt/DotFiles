@@ -1,0 +1,44 @@
+#!/bin/sh
+
+
+if [ -z "$1" ]; then
+ echo "Usage is: p4diff branchdir"
+ exit 1
+fi
+
+CWD=$(pwd)
+BRANCH="$1"
+shift
+
+if [ ! -e "$BRANCH" ]; then
+ echo "$BRANCH not found."
+ exit 1
+fi
+
+cd "$BRANCH" || exit 1
+BRANCH=$(pwd -P)/
+
+NAME=$(basename "${BRANCH}")
+DIFF="$CWD/${NAME}.diff"
+DIFFLIST="$CWD/${NAME}.list"
+
+if [ -e "$DIFF" ]; then
+	echo "$DIFF already exists. Not regenerating."
+else
+	p4 diff -duN "$@" > "$DIFF"
+fi
+
+cd "$CWD" || exit 1
+
+cp "$DIFF" "$DIFF".bak
+#Generate new Diff with p4diffconv to "$DIFF".new
+p4diffconv "$DIFF" "$BRANCH" | sort -u > "$DIFFLIST"
+if [ -f "$DIFF".new ]; then
+	mv "$DIFF".new "$DIFF" && rm "$DIFF".bak
+else
+	echo "Unable to perform normalization on $DIFF."
+	rm "$DIFF".bak
+	exit 1
+fi
+
+echo "$DIFFLIST"

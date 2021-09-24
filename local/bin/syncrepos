@@ -1,0 +1,46 @@
+#!/bin/bash
+
+set -e
+WS=${1:-~/WS}
+
+sync_git_repo_dir() {
+	repo_dir="$1"
+	echo "Updating: $repo_dir ..."
+	pushd "$repo_dir" || { echo "Not found: $repo_dir" ; return 1; }
+	git pull 2>&1 || { echo "Unable to update: $repo_dir" ; popd; return 1; }
+	popd || return 1
+	return 0
+}
+
+find "$WS" -type d -name .git | while read -r repo; do
+	repo_dir=$(dirname "$repo")
+	sync_git_repo_dir "$repo_dir"
+done
+
+sync_hg_repo_dir() {
+	repo_dir="$1"
+	echo "Updating: $repo_dir ..."
+	pushd "$repo_dir" || { echo "Not found: $repo_dir" ; return 1; }
+	hg pull 2>&1 || { echo "Unable to update: $repo_dir" ; popd; return 1; }
+	popd || return 1
+	return 0
+}
+
+find "$WS" -type d -name .hg | while read -r repo; do
+	repo_dir=$(dirname "$repo")
+	sync_hg_repo_dir "$repo_dir"
+done
+
+sync_svn_repo_dir() {
+	repo_dir="$1"
+	echo "Updating: $repo_dir ..."
+	pushd "$repo_dir" || { echo "Not found: $repo_dir" ; return 1; }
+	svn update 2>&1 || { echo "Unable to update: $repo_dir" ; popd; return 1; }
+	popd || return 1
+	return 0
+}
+
+find "$WS" -type d -name .svn | while read -r repo; do
+	repo_dir=$(dirname "$repo")
+	sync_svn_repo_dir "$repo_dir"
+done

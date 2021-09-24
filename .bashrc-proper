@@ -1,0 +1,57 @@
+# ~/.bashrc-proper
+# shellcheck disable=SC2148,SC2166,SC1090,SC2236,SC1091
+
+# Startup
+
+#If Not Loaded!
+if [ x"$RC_LOADED" != "xtrue" ] ; then
+export RC_LOADED=true
+
+#Home Specific
+export HOME
+
+#Bash
+if [ ! -z "${BASH_VERSION}" -a -z "${ZSH_VERSION}" ] ; then
+	if [ -f /etc/bashrc ]; then
+        	. /etc/bashrc
+	fi
+	if [ -f /etc/bash.bashrc ]; then
+        	. /etc/bash.bashrc
+	fi
+fi
+
+#Paths
+. "$HOME/.bashrc-path"
+. "$HOME/.bashrc-toolchain"
+if [ -f "$HOME/.bashrc-$OSTYPE" ]; then
+	. "$HOME/.bashrc-$OSTYPE"
+fi
+if [ -f "$HOME/.bashrc-$HOSTNAME" ]; then
+	. "$HOME/.bashrc-$HOSTNAME"
+fi
+
+#Exports
+. "$HOME/.bashrc-exports"
+
+#Session Start
+case "$-" in
+	*i* ) 
+		. "$HOME/.bashrc-aliases"
+		. "$HOME/.bashrc-applications"
+		if [ -f "$HOME/.bashrc-$HOSTNAME-session" ]; then
+			. "$HOME/.bashrc-$HOSTNAME-session"
+		fi
+		. "$HOME/.bashrc-session"
+		;;
+	* )
+		;;
+esac
+
+#Set Bash Prompt
+[ -z "$BASH_VERSION" ] || PS1=' \W >> '
+
+#If Not Loaded!
+fi
+
+RC_LOADED=
+export RC_LOADED

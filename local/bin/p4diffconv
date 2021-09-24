@@ -1,0 +1,46 @@
+#!/usr/bin/perl
+#Improved minimal patch conversion utility. Works with p4 diffs only.
+
+use strict;
+
+sub convdiff ($$) {
+        my $filename=@_[0];
+        shift @_;
+        my $pathtoremove=@_[0];
+        shift @_;
+        if (! $filename) {
+            return;
+        }
+        my $filenamenew=$filename.".new";
+	if(!(open INFILE, "<", $filename)) { 
+            die "Unable to open $filename!\n";
+        } 
+	if(!(open OUTFILE, ">", $filenamenew)) {
+           close INFILE;
+           die "Unable to open $filenamenew!\n";
+           return;
+       }
+       my $pat;
+       while(<INFILE>) {
+            if(/^====\s+.*\s+\-\s+$pathtoremove(\/?)(.*)\s+====\s+(\(.*\))?$/) {
+               $pat=$2;
+	    } else {
+               if($pat) { #Helps skip empty diffs.
+                   print "${pat}\n";
+                   print OUTFILE "--- ${pat}\n+++ ${pat}.new\n";
+               } 
+               undef $pat;
+               print OUTFILE $_;
+	    }
+       }
+       close OUTFILE;
+       close INFILE;
+}
+
+my $ARGC=@ARGV;
+if ($ARGC!=1 && $ARGC!=2) {
+    die "Usage: $0 diff [pathtostrip]\n";
+}
+
+convdiff $ARGV[0], $ARGV[1];
+exit 0;

@@ -1,0 +1,48 @@
+#!/bin/sh
+# shellcheck disable=SC2003,SC2086,SC2001
+
+if [ -z "$1" ]; then
+ echo Usage is: p4patchc list/difffile
+ exit 1
+fi
+DIFFLIST="$1"
+
+if [ ! -f "$DIFFLIST" ]; then
+ echo "$DIFFLIST" not found/not a file.
+ exit 1
+fi
+
+DIFF=$(echo "$DIFFLIST" | sed 's/\.list/\.diff/g')
+
+if [ "$DIFF" = "$DIFFLIST" ]; then
+DIFFLIST=$(echo "$DIFF" | sed 's/\.diff/\.list/g')
+fi
+
+DIFFLISTADD="${DIFFLIST}_add"
+DIFFLISTED="${DIFFLIST}_ed"
+
+true >"$DIFFLISTADD"
+true >"$DIFFLISTED"
+
+add=0
+edit=0
+
+while read -r line; do
+	if [ ! -e "$line" ]; then
+		echo "$line" >> "$DIFFLISTADD"
+		add=$(expr $add + 1)
+	else
+		echo "$line" >> "$DIFFLISTED"
+		edit=$(expr $edit + 1)
+	fi
+done < $DIFFLIST
+
+if [ $add -gt 0 ]; then
+	echo "touch \$(cat \"$DIFFLISTADD\");"
+	echo "p4 add -t text \$(cat \"$DIFFLISTADD\");"
+fi
+if [ $edit -gt 0 ]; then
+	echo "p4 edit \$(cat \"$DIFFLISTED\");"
+fi
+echo "patch -p0 < \"$DIFF\" ;"
+echo "rm -fr \"$DIFFLISTADD\" \"$DIFFLISTED\""

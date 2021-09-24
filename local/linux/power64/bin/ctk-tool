@@ -1,0 +1,534 @@
+#!/bin/sh
+# CTK - The Cell Tool Kit Library
+# http://ctk-dev.sourceforge.net/
+# http://cell.fixstars.com/ctk/
+#
+# Copyright (C) 2006-2008 Fixstars Corp.
+#
+# This library is free software; you can redistribute it and/or modify it
+# under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation; either version 2.1 of the License,
+# or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+# License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with this library; if not, write to the Free Software Foundation,
+# Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+
+ctk_config="`dirname $0`/ctk-config"
+run_cmd_flag="yes"
+objext="o"
+
+run() {
+    echo "==> $*"
+    if test "x$run_cmd_flag" = "xyes";  then
+        $* || {
+            echo "Error: \"$1\" has failed." 1>&2
+            exit 1
+        }
+    fi
+}
+
+print_error() {
+    echo "$*" 1>&2
+}
+
+usage() {
+    cmd=`basename $0`
+    print_error "Usage:   $cmd [option] command [command-options] file [files...] [options]"
+    print_error "Options:"
+    print_error "  -n:              print only; don't actually run the command"
+    print_error "Commands:"
+    print_error "  ppu-compile:     compile given source files"
+    print_error "  ppu-link:        link given object files"
+    print_error "  ppu-build:       compile and link given files"
+    print_error "  spu-compile:     compile given source files"
+    print_error "  spu-link:        link given object files"
+    print_error "  spu-build:       compile and link given source files"
+    print_error "  spu-task-link:   link given object files as a SPE task"
+    print_error "  spu-task-build:  compile and link given source files as a SPE task"
+    print_error "  cesof-embed:     embed given SPU-executable into a CEOSF (PPE-linkable) object"
+    print_error "  cesof-embed-lib: create a CESOF library from an SPU-executable"
+    print_error "  cesof-build:     build and create a CESOF object"
+    print_error "  cesof-build-lib: build and create a CESOF library"
+    print_error "  cesof-task-build:     build and create a CESOF task object"
+    print_error "  cesof-task-build-lib: build and create a CESOF task library"
+    print_error "Command-options:"
+    print_error "  --output=ofile:  specify an output name (like -o for cc)"
+    print_error "                   works for most commands except for *-compile"
+    print_error "  --lang=<c|cxx>:  specify the build language [default=c]"
+    print_error "  --objext=ext:    specify an extension for object file names"
+    print_error "                   (ex. --objext=obj) [default=o]"
+    print_error "  --objprefix=prefix: specify a prefix for object file names"
+    print_error "                   (ex. --objprefix=spu_) [default=]"
+    print_error "  --strip:         strip SPU binaries"
+    exit 1
+}
+
+check_env() {
+    test -f $ctk_config || {
+        print_error "Error: ctk_config is missing.  You need \`ctk_config' under the"
+        print_error "       same directory as `basename $0`."
+        exit 1;
+    }
+}
+
+check_command_option() {
+    for arg in $*; do
+        case $arg in
+        --output=*)
+            run_output=`echo $arg | sed 's/--output=//'`
+            shift
+            ;;
+        --lang=*)
+            run_cc_lang=`echo $arg | sed 's/--lang=//'`
+            shift
+            ;;
+        --objext=*)
+            objext=`echo $arg | sed 's/--objext=//'`
+            shift
+            ;;
+        --objprefix=*)
+            objprefix=`echo $arg | sed 's/--objprefix=//'`
+            shift
+            ;;
+        --strip)
+            run_do_strip="true"
+            shift
+            ;;
+        --*)
+            usage;;
+        esac
+    done
+    run_args=($*)
+}
+
+create_embed_header() {
+    echo "extern ctk_spe_program_t $1;" > $2
+    run_output="$run_output $2"
+}
+
+check_expect_executable() {
+    for f in $*; do
+        case $f in
+            *.o|*.obj)
+                print_error "ERROR: we seem to get an object file ($f) as the inputs"
+                print_error "        while we're expecting executable file as the argument."
+                exit 1
+                ;;
+            *.c)
+                print_error "ERROR: we seem to get a source file ($f) as the inputs"
+                print_error "       while we're expecting executable file as the argument."
+                exit 1
+                ;;
+        esac
+    done
+}
+
+check_expect_object() {
+    for f in $*; do
+        case $f in
+            *.c) ;;
+            *)
+                print_error "WARNING: we seem to get a non-source file ($f) as the inputs"
+                print_error "         while we're expecting source files as arguments."
+                exit 1
+                ;;
+        esac
+    done
+}
+
+check_expect_object() {
+    for f in $*; do
+        case $f in
+            *.o|*.obj) ;;
+            *)
+                print_error "ERROR: we seem to get a non-object file ($f) as the inputs"
+                print_error "       while we're expecting object files as arguments."
+                exit 1
+                ;;
+        esac
+    done
+}
+
+extract_cflags() {
+    cflags=
+    for arg in $*; do
+        case $arg in 
+        -[gOILDUfm]*) cflags="$cflags $arg" ;;
+        -o*) [ "x$run_output" = "x" ] && cflags="$cflags $arg" ;;
+        esac
+    done
+    echo $cflags
+}
+
+extract_ldflags() {
+    append=
+    ldflags=
+    for arg in $*; do
+        if [ "x$append" = "xtrue" ]; then
+            ldflags="$ldflags $arg"
+            append=false
+        else
+            case $arg in
+            -Wl*) ldflags="$ldflags $arg" ;;
+            -[RL]*) ldflags="$ldflags $arg" ;;
+            -l*) ldflags="$ldflags $arg" ;;
+            -T*) 
+                ldflags="$ldflags $arg" 
+                append=true
+                ;;
+            esac
+        fi
+    done
+    echo $ldflags
+}
+
+extract_csources() {
+    results=
+    for arg in $*; do
+        case $arg in
+        *.[cCsS]) results="$results $arg" ;;
+        esac
+    done
+    echo $results
+}
+
+extract_cxxsources() {
+    results=
+    for arg in $*; do
+        case $arg in
+        *.cc) results="$results $arg" ;;
+        *.cxx) results="$results $arg" ;;
+        *.cpp) results="$results $arg" ;;
+        *.CC) results="$results $arg" ;;
+        *.CPP) results="$results $arg" ;;
+        esac
+    done
+    echo $results
+}
+
+extract_objects() {
+    results=
+    for arg in $*; do
+        case $arg in
+        *.o|*.obj|*.O|*.OBJ) results="$results $arg" ;;
+        *.$objext) results="$results $arg" ;;
+        esac
+    done
+    echo $results
+}
+
+do_ppu_compile() {
+    run_cc=`sh $ctk_config --ppu-cc`
+    run_cxx=`sh $ctk_config --ppu-cxx`
+    run_cc_options="`sh $ctk_config --ppu-cflags` $arg_cflags"
+    run_cxx_options="`sh $ctk_config --ppu-cxxflags` $arg_cflags"
+    for f in $arg_csources; do
+        run $run_cc -c $f $run_cc_options -o ${objprefix}${f%.*}.${objext}
+        run_objects="$run_objects ${objprefix}${f%.*}.${objext}"
+    done
+    for f in $arg_cxxsources; do
+        run $run_cxx -c $f $run_cxx_options -o ${objprefix}${f%.*}.${objext}
+        arg_ldflags="$arg_ldflags"
+        run_objects="$run_objects ${objprefix}${f%.*}.${objext}"
+        run_cc_lang=cxx
+    done
+}
+
+do_spu_compile() {
+    run_cc=`sh $ctk_config --spu-cc`
+    run_cxx=`sh $ctk_config --spu-cxx`
+    run_cc_options="`sh $ctk_config --spu-cflags` $arg_cflags"
+    run_cxx_options="`sh $ctk_config --spu-cxxflags` $arg_cflags"
+    for f in $arg_csources; do
+        run $run_cc -c $f $run_cc_options -o ${objprefix}${f%.*}.${objext}
+        run_objects="$run_objects ${objprefix}${f%.*}.${objext}"
+    done
+    for f in $arg_cxxsources; do
+        run $run_cxx -c $f $run_cxx_options -o ${objprefix}${f%.*}.${objext}
+        run_objects="$run_objects ${objprefix}${f%.*}.${objext}"
+        arg_ldflags="$arg_ldflags"
+        run_cc_lang=cxx
+    done
+}
+
+do_spu_build() {
+    run_objects=
+    do_spu_compile
+    if [ "x$run_cc_lang" = "xcxx" ]; then
+        run_cmd=`sh $ctk_config --spu-cxx`
+    else
+        run_cmd=`sh $ctk_config --spu-cc`
+    fi
+    run_link_options="`sh $ctk_config --spu-cflags --spu-ldflags` $arg_ldflags `sh $ctk_config --spu-libs`"
+    run $run_cmd $run_objects $arg_objects $run_link_options -o $1
+
+    if [ "x$run_do_strip" = "xtrue" ]; then
+        run_strip=`sh $ctk_config --spu-strip`
+        run $run_strip $1
+    fi
+}
+
+do_spu_task_build() {
+    run_objects=
+    do_spu_compile
+    if [ "x$run_cc_lang" = "xcxx" ]; then
+        run_cmd=`sh $ctk_config --spu-cxx`
+    else
+        run_cmd=`sh $ctk_config --spu-cc`
+    fi
+    run_link_options="$arg_ldflags `sh $ctk_config --spu-cflags --spu-task-ldflags --spu-libs`"
+    run $run_cmd $run_objects $arg_objects $run_link_options -o $1
+
+    if [ "x$run_do_strip" = "xtrue" ]; then
+        run_strip=`sh $ctk_config --spu-strip`
+        run $run_strip $1
+    fi
+}
+
+sanitize_symbol_name() {
+    run_symbol=`basename $1`
+    run_symbol=${run_symbol%.*}
+    case $run_symbol in
+    *-embed) run_symbol=`echo $run_symbol | sed 's/-embed//'` ;;
+    lib*) run_symbol=`echo $run_symbol | sed 's/lib//'` ;;
+    esac
+    run_symbol=`echo $run_symbol | sed -e 's/[-\+<>\.]/_/g'`
+    echo $run_symbol
+}
+
+sanitize_embed_fname() {
+    case $1 in
+        *.o|*.O|*.${objext}) run_embed=$1 ;;
+        *) run_embed=${1}.${objext} ;;
+    esac
+    echo $run_embed
+}
+
+sanitize_solib_fname() {
+    fname=`basename $1`
+    #dirname=`dirname $1`
+    case $fname in
+        lib*.so) fname=$fname ;;
+        *.so) fname=lib$fname ;;
+        lib*) fname=${fname%.*}.so ;;
+        *) fname=lib${fname%.*}.so ;;
+    esac
+    #echo $dirname/$fname
+    echo $fname
+}
+
+check_command() {
+    [ $# -lt 1 ] && usage
+
+    run_cmd=""
+    run_cmd_options=""
+
+    tool_cmd=$1; shift
+    run_args=($*)
+    check_command_option ${run_args[*]}
+    arg_objects=`extract_objects ${run_args[*]}`
+    arg_csources=`extract_csources ${run_args[*]}`
+    arg_cxxsources=`extract_cxxsources ${run_args[*]}`
+    arg_cflags=`extract_cflags ${run_args[*]}`
+    arg_ldflags=`extract_ldflags ${run_args[*]}`
+
+    run_objects=
+
+    case $tool_cmd in 
+    ppu-compile)
+        do_ppu_compile
+        ;;
+    ppu-link)
+        if [ "x$run_cc_lang" = "xcxx" ]; then
+            run_cmd=`sh $ctk_config --ppu-cxx`
+        else
+            run_cmd=`sh $ctk_config --ppu-cc`
+        fi
+        run_link_options="`sh $ctk_config --ppu-ldflags --ppu-libs` $arg_ldflags"
+        run_output=${run_output:-"a.out"}
+        run $run_cmd $arg_objects $run_link_options -o $run_output
+        ;;
+    ppu-build) 
+        do_ppu_compile
+        if [ "x$run_cc_lang" = "xcxx" ]; then
+            run_cmd=`sh $ctk_config --ppu-cxx`
+        else
+            run_cmd=`sh $ctk_config --ppu-cc`
+        fi
+        run_output=${run_output:-"a.out"}
+        run_link_options="`sh $ctk_config --ppu-cflags --ppu-ldflags --ppu-libs` $arg_ldflags"
+        run $run_cmd $run_objects $arg_objects $run_link_options -o $run_output
+        ;;
+    spu-compile)
+        do_spu_compile
+        ;;
+    spu-link)
+        if [ "x$run_cc_lang" = "xcxx" ]; then
+            run_cmd=`sh $ctk_config --spu-cxx`
+        else
+            run_cmd=`sh $ctk_config --spu-cc`
+        fi
+        run_link_options="$arg_ldflags `sh $ctk_config --spu-cflags --spu-ldflags --spu-libs`"
+        run_output=${run_output:-"a.out"}
+        run $run_cmd $arg_objects $run_cmd_options -o $run_output
+        ;;
+    spu-build) 
+        run_output=${run_output:-"a.out"}
+        do_spu_build $run_output
+        ;;
+    spu-task-link)
+        if [ "x$run_cc_lang" = "xcxx" ]; then
+            run_cmd=`sh $ctk_config --spu-cxx`
+        else
+            run_cmd=`sh $ctk_config --spu-cc`
+        fi
+        run_link_options="$arg_ldflags `sh $ctk_config --spu-cflags --spu-task-ldflags --spu-libs`"
+        run_output=${run_output:-"a.out"}
+        run $run_cmd $run_objects $run_cmd_options -o $run_output
+        ;;
+    spu-task-build) 
+        run_output=${run_output:-"a.out"}
+        do_spu_task_build $run_output
+        ;;
+    cesof-embed) 
+        check_expect_executable ${run_args[*]}
+        run_cmd="`sh $ctk_config --embedspu` `sh $ctk_config --ppu-cflags | sed 's/.* *\(-m[36][24]\) *.*/\1/'`"
+        [ ${#run_args[*]} -gt 2 ] && {
+            print_error "WARNING: spu-embed will use only the first arg \"${run_args[0]}\" and assumes "
+            print_error "         it is an SPU executable file to be embedded."
+        }
+        run_target=${run_args[0]}
+        run_output=`sanitize_embed_fname ${run_output:-"${run_target%.*}-embed.o"}`
+        run_symbol=`sanitize_symbol_name $run_target`
+        run $run_cmd ${run_symbol} ${run_target} ${run_output}
+
+        # generate header
+        run create_embed_header ${run_symbol} ${run_target%.*}.h
+        ;;
+    cesof-embed-lib) 
+        # embed
+        check_expect_executable ${run_args[*]}
+        run_cmd="`sh $ctk_config --embedspu` `sh $ctk_config --ppu-cflags | sed 's/.* *\(-m[36][24]\) *.*/\1/'`"
+        run_target=${run_args[0]}
+        run_embed=${run_target%.*}-embed.${objext}
+        run_symbol=`sanitize_symbol_name ${run_target%.*}`
+        run $run_cmd $run_symbol $run_target $run_embed
+
+        # link
+        run_output=`sanitize_solib_fname ${run_output:-"lib${run_target%.*}.so"}`
+        run `sh $ctk_config --ppu-cc` `sh $ctk_config --ppu-cflags` \
+            -shared -Wl,-soname,$run_output -o $run_output $run_embed
+        run rm -f $run_embed
+
+        # generate header
+        run create_embed_header ${run_symbol} ${run_output%.*}.h
+        ;;
+    cesof-build)
+        # build
+        run_elf_base=${run_output:-${run_args[0]}}
+        run_elf=${run_elf_base%.*}.elf
+        do_spu_build ${run_elf}
+
+        # embed
+        run_cmd="`sh $ctk_config --embedspu` `sh $ctk_config --ppu-cflags | sed 's/.* *\(-m[36][24]\) *.*/\1/'`"
+        run_embed_base=${run_args[0]}
+        run_embed=`sanitize_embed_fname ${run_output:-"${run_embed_base%.*}-embed.${objext}"}`
+        run_symbol=`sanitize_symbol_name ${run_elf_base%.*}`
+        run $run_cmd ${run_symbol} ${run_elf} ${run_embed}
+        run rm -f $run_elf
+        run_output=${run_embed}
+
+        # generate header
+        run create_embed_header ${run_symbol} ${run_output%.*}.h
+        ;;
+    cesof-build-lib) 
+        # build
+        run_elf_base=${run_output:-${run_args[0]}}
+        run_elf=${run_elf_base%.*}.elf
+        do_spu_build ${run_elf}
+
+        # embed
+        run_cmd="`sh $ctk_config --embedspu` `sh $ctk_config --ppu-cflags | sed 's/.* *\(-m[36][24]\) *.*/\1/'`"
+        run_embed_base=${run_args[0]}
+        run_embed=`sanitize_embed_fname ${run_output:-"${run_embed_base%.*}-embed.${objext}"}`
+        run_symbol=`sanitize_symbol_name ${run_elf_base%.*}`
+        run $run_cmd ${run_symbol} ${run_elf} ${run_embed}
+        run rm -f $run_elf
+
+        # link
+        run_output=`sanitize_solib_fname ${run_output:-"lib${run_embed_base%.*}.so"}`
+        run `sh $ctk_config --ppu-cc` `sh $ctk_config --ppu-cflags` \
+            -shared -Wl,-soname,$run_output -o $run_output $run_embed
+        run rm -f $run_embed
+
+        # generate header
+        run create_embed_header ${run_symbol} ${run_output%.*}.h
+
+        ;;
+    cesof-task-build)
+        # build
+        run_elf_base=${run_output:-${run_args[0]}}
+        run_elf=${run_elf_base%.*}.elf
+        do_spu_task_build ${run_elf}
+
+        # embed
+        run_cmd="`sh $ctk_config --embedspu` `sh $ctk_config --ppu-cflags | sed 's/.* *\(-m[36][24]\) *.*/\1/'`"
+        run_embed_base=${run_args[0]}
+        run_embed=`sanitize_embed_fname ${run_output:-"${run_embed_base%.*}-embed.${objext}"}`
+        run_symbol=`sanitize_symbol_name ${run_elf_base%.*}`
+        run $run_cmd ${run_symbol} ${run_elf} ${run_embed}
+        run rm -f $run_elf
+        run_output=${run_embed}
+
+        # generate header
+        run create_embed_header ${run_symbol} ${run_output%.*}.h
+        ;;
+    cesof-task-build-lib) 
+        # build
+        run_elf_base=${run_output:-${run_args[0]}}
+        run_elf=${run_elf_base%.*}.elf
+        do_spu_task_build ${run_elf}
+
+        # embed
+        run_cmd="`sh $ctk_config --embedspu` `sh $ctk_config --ppu-cflags | sed 's/.* *\(-m[36][24]\) *.*/\1/'`"
+        run_embed_base=${run_args[0]}
+        run_embed=`sanitize_embed_fname ${run_output:-"${run_embed_base%.*}-embed.${objext}"}`
+        run_symbol=`sanitize_symbol_name ${run_elf_base%.*}`
+        run $run_cmd ${run_symbol} ${run_elf} ${run_embed}
+        run rm -f $run_elf
+
+        # link
+        run_output=`sanitize_solib_fname ${run_output:-"lib${run_embed_base%.*}.so"}`
+        run `sh $ctk_config --ppu-cc` `sh $ctk_config --ppu-cflags` \
+            -shared -Wl,-soname,$run_output -o $run_output $run_embed
+        run rm -f $run_embed
+
+        # generate header
+        run create_embed_header ${run_symbol} ${run_output%.*}.h
+
+        ;;
+    *) usage ;;
+    esac
+
+    test "x$run_output" != "x" && {
+        echo "Generated: $run_output"
+    }
+    test "x$run_symbol" != "x" && {
+        echo "Symbol: $run_symbol"
+    }
+    echo ""
+}
+
+check_env
+for arg in $*; do
+    case $arg in
+    -n)  run_cmd_flag="no"; shift ;;
+    esac
+done
+check_command $*

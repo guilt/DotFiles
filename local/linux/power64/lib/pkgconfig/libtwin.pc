@@ -1,0 +1,10 @@
+prefix=/home/karthik/local/linux
+exec_prefix=/home/karthik/local/linux/power64
+libdir=/home/karthik/local/linux/power64/lib
+includedir=/home/karthik/local/linux/include
+
+Name: libtwin
+Description: Twin window system library
+Version: 0.0.3
+Cflags: -I${includedir} 
+Libs: -L${libdir} -ltwin -lX11   -lpng12    -lz -lm

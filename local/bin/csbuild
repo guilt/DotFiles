@@ -1,0 +1,12 @@
+#!/bin/sh
+
+CSCOPE_IN=cscope.files
+CSCOPE_OUT=cscope.out
+CSCOPE_CMD=ncscope
+CSCOPE_OPTS="-q"
+
+if [ ! -e "$CSCOPE_IN" ]; then
+ filelist "$CSCOPE_IN"
+fi
+
+"$CSCOPE_CMD" -b "$CSCOPE_OPTS" -i "$CSCOPE_IN" -f "$CSCOPE_OUT"

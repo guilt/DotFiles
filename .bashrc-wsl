@@ -1,0 +1,11 @@
+# .bashrc-wsl
+# shellcheck disable=SC2148,SC2034
+
+#WSL Setup
+if ! pgrep dockerd >/dev/null 2>&1; then
+    if which dockerd >/dev/null 2>&1; then
+        sudo dockerd >/dev/null 2>&1 &
+        sleep 2
+        sudo chmod a+w /var/run/docker.sock
+    fi
+fi

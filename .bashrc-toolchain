@@ -1,0 +1,49 @@
+# ~/.bashrc-toolchain
+# shellcheck disable=SC2148,SC2236,SC2034,SC2209
+
+# Toolchain setup
+
+#Default Values
+MAKE=make
+AS=as
+AR=ar
+RANLIB=ranlib
+OBJCOPY=objcopy
+OBJDUMP=objdump
+STRIP=strip
+LD=ld
+CC=cc
+CXX=c++
+CPP="${CC} -E"
+FC=f77
+
+#Locale Default Values
+LOCALE=C.UTF-8
+LANG=C.UTF-8
+LC_ALL=C.UTF-8
+
+#Test Tools Setup
+TEST_DIR=$PREFIX
+
+#Set Paths
+PATH=$TEST_DIR/bin:$PATH
+LOCAL_LD_LIBRARY_PATH=$TEST_DIR/lib:$TEST_DIR/libexec:$LOCAL_LD_LIBRARY_PATH
+LOCAL_INCLUDE_PATH=$TEST_DIR/include:$LOCAL_INCLUDE_PATH
+LOCAL_LIBRARY_PATH=$TEST_DIR/lib:$TEST_DIR/libexec:$LOCAL_LIBRARY_PATH
+
+MANPATH=$TEST_DIR/man:$MANPATH
+INFOPATH=$TEST_DIR/info:$INFOPATH
+
+if  [ ! -z "$COMP_PREFIX" ] ; then
+    [ ! -z "$AS_CMD" ] && AS=$AS_CMD || AS=${COMP_PREFIX}${AS}
+    [ ! -z "$AR_CMD" ] && AR=$AR_CMD || AR=${COMP_PREFIX}${AR}
+    [ ! -z "$RANLIB_CMD" ] && RANLIB=$RANLIB_CMD || RANLIB=${COMP_PREFIX}${RANLIB}
+    [ ! -z "$OBJCOPY_CMD" ] && OBJCOPY=$OBJCOPY_CMD || OBJCOPY=${COMP_PREFIX}${OBJCOPY}
+    [ ! -z "$OBJDUMP_CMD" ] && OBJDUMP=$OBJDUMP_CMD || OBJDUMP=${COMP_PREFIX}${OBJDUMP}
+    [ ! -z "$STRIP_CMD" ] && STRIP=$STRIP_CMD || STRIP=${COMP_PREFIX}${STRIP}
+    [ ! -z "$LD_CMD" ] && LD=$LD_CMD || LD=${COMP_PREFIX}${LD}
+    [ ! -z "$CC_CMD" ] && CC=$CC_CMD || CC=${COMP_PREFIX}${CC}
+    [ ! -z "$CXX_CMD" ] && CXX=$CXX_CMD || CXX=${COMP_PREFIX}${CXX}
+    [ ! -z "$CPP_CMD" ] && CPP=$CPP_CMD || CPP="${CC} -E"
+    [ ! -z "$FC_CMD" ] && FC=$FC_CMD || FC=${COMP_PREFIX}${FC}
+fi

@@ -1,0 +1,39 @@
+#!/usr/bin/perl
+
+use strict;
+use File::Find;
+
+sub rendircb($) {
+ my $path = shift || $_;
+ if($path =~ /^[0-9a-z\!\#\$\%\&\'\(\)\-\@\^\_\`\{\}\~\+\,\;\=\[\]]{0,8}(\.[0-9a-z\!\#\$\%\&\'\(\)\-\@\^\_\`\{\}\~\+\,\;\=\[\]]{0,3})?$/ ) {
+   return if($path eq ".svn");
+   return if($path eq ".");
+   my $reppath = uc $path;
+   return if($path eq $reppath);
+   print ("$path -> $reppath\n");
+   rename "$path","x$reppath";
+   rename "x$reppath","$reppath";
+ }
+}
+
+sub renamedir($) {
+ my $dir = shift || ".";
+ print "$dir not found or not a directory\n" unless (-d $dir);
+ finddepth(\&rendircb, $dir);
+}
+
+sub usage {
+  print STDERR "$0 DIR1 DIR2 ...\n";
+  return -1;
+}
+
+sub main {
+ my $ARGC = @_;
+ return usage unless ($ARGC > 0);
+ while($_ = shift) {
+  renamedir($_);
+ }  
+ return 0;
+}
+
+exit main @ARGV;

@@ -1,0 +1,202 @@
+#!/bin/sh
+# shellcheck disable=SC2153,SC2124,SC2044,SC2166
+
+# Portable Configuration for Home Directories!
+
+set -e
+
+fatal() {
+	echo "FATAL:" "$*"
+	exit 1
+}
+
+note() {
+	echo "NOTE:" "$*"
+}
+
+error_exit () {
+	fatal "Use as: arch-conf [app_dir_name]"
+}
+
+absolute_path () {
+	S="$1"
+	D=$(dirname "$S" 2>/dev/null)
+	B=$(basename "$S" 2>/dev/null)
+	D=$(cd "$D" 2>/dev/null && pwd -P || echo "$D")
+	echo "$D/$B"
+}
+
+S=.
+
+[ "x${1}" = "x" ] && error_exit
+while [ x"${1}" != x ] ; 
+do
+	if [ ! -d "${1}" ] ;
+	then
+		EXTRA_CONF="${EXTRA_CONF} ${1}"
+	else
+		S="${1}"
+	fi
+	shift
+done
+
+S=$(absolute_path "${S}")
+test ! -d "${S}" && error_exit
+
+acpaths="default"
+mtype=${MTYPE:-exotic}
+# shellcheck disable=SC2039
+ostype=${OSTYPE:-exotic}
+
+if [ x"$mtype" != xexotic ] ; then
+    if [ x"$ostype" != xexotic ]; then
+        BUILD_SYS=${mtype}-${ostype}
+    fi
+else
+    BUILD_SYS=native
+fi
+
+[ x"$HOST_SYS" = x ] && HOST_SYS=${BUILD_SYS}
+[ x"$TARGET_SYS" = x ] && TARGET_SYS=${BUILD_SYS}
+
+prefix="$PREFIX"
+[ x"$prefix" = x ] && prefix=$DATAROOTDIR
+[ x"$prefix" = x ] && prefix=/usr
+
+STAGING_DATADIR=$prefix/share
+
+exec_prefix="$EPREFIX"
+[ x"$exec_prefix" = x ] && exec_prefix=$PREFIX
+
+sysconfdir="$DATAROOTDIR/etc"
+
+bindir="$EPREFIX/bin"
+sbindir="$EPREFIX/sbin"
+
+includedir="$PREFIX/include"
+oldincludedir="$PREFIX/include"
+sharedstatedir="$PREFIX/com"
+localstatedir="$PREFIX/var"
+
+libdir="$EPREFIX/lib"
+libexecdir="$EPREFIX/libexec"
+
+datadir="$DATAROOTDIR/share"
+mandir="$DATAROOTDIR/share/man"
+infodir="$DATAROOTDIR/share/info"
+
+run_configure () {
+	if [ -x "${S}/configure" ] ; then
+		cfgcmd="${S}/configure \
+		    --build=${BUILD_SYS} \
+		    --host=${HOST_SYS} \
+		    --target=${TARGET_SYS} \
+		    --prefix=${prefix} \
+		    --exec_prefix=${exec_prefix} \
+		    --bindir=${bindir} \
+		    --sbindir=${sbindir} \
+		    --libexecdir=${libexecdir} \
+		    --datadir=${datadir} \
+		    --sysconfdir=${sysconfdir} \
+		    --sharedstatedir=${sharedstatedir} \
+		    --localstatedir=${localstatedir} \
+		    --libdir=${libdir} \
+		    --includedir=${includedir} \
+		    --oldincludedir=${oldincludedir} \
+		    --infodir=${infodir} \
+		    --mandir=${mandir} \
+                    --enable-maintainer-mode \
+			${EXTRA_CONF} \
+		    $@"
+		note "Running $cfgcmd..."
+		$cfgcmd || fatal "runconf failed" 
+	else
+		fatal "no configure script found"
+	fi
+}
+
+autotools_do_configure() {
+	# WARNING: gross hack follows:
+	# An autotools built package generally needs these scripts, however only
+	# automake or libtoolize actually install the current versions of them.
+	# This is a problem in builds that do not use libtool or automake, in the case
+	# where we -need- the latest version of these scripts.  e.g. running a build
+	# for a package whose autotools are old, on an x86_64 machine, which the old
+	# config.sub does not support.  Work around this by installing them manually
+	# regardless.
+	( for ac in $(find "${S}" -name configure.in -o -name configure.ac); do
+			CDIR=$(dirname "$ac")
+			rm -f "${CDIR}"/configure
+			done )
+	if [ -f "${S}/configure.in" -o -f "${S}/configure.ac" ]; then
+		olddir=$(pwd)
+		cd "${S}"
+		if [ x"${acpaths}" = xdefault ]; then
+			acpaths=
+			for i in $(find "${S}" -maxdepth 2 -name \*.m4| \
+                                   grep -v 'aclocal.m4'| \
+				   grep -v 'acinclude.m4'| \
+                                   sed -e 's,\(.*/\).*$,\1,'| \
+                                   sort -u); do
+				acpaths="$acpaths -I $i"
+			done
+		else
+			acpaths="${acpaths}"
+		fi
+		AUTOV=$(automake --version 2>/dev/null|head -n 1|sed "s/.* //;s/\.[0-9]\+$//")
+		AUTOV=${AUTOV:-unknown}
+		note Automake Version is: "$AUTOV"
+		install -d "${STAGING_DATADIR}/aclocal-$AUTOV"
+		install -d "${STAGING_DATADIR}/aclocal"
+		acpaths="$acpaths -I ${STAGING_DATADIR}/aclocal-$AUTOV -I ${STAGING_DATADIR}/aclocal"
+		# autoreconf is too shy to overwrite aclocal.m4 if it doesn't look
+		# like it was auto-generated.  Work around this by blowing it away
+		# by hand, unless the package specifically asked not to run aclocal.
+		if echo "${EXTRA_AUTORECONF}" | grep "aclocal" ; then
+                        echo "\c"
+                else
+			rm -f aclocal.m4
+		fi
+		if [ -f configure.in ]; then
+			CONFIGURE_AC=configure.in
+		else
+			CONFIGURE_AC=configure.ac
+                        if [ -f configure.ac ] ; then
+                              ln -sf configure.ac configure.in
+                        fi
+		fi
+		if grep "^AM_GLIB_GNU_GETTEXT" $CONFIGURE_AC >/dev/null; then
+			if grep "sed.*POTFILES" $CONFIGURE_AC >/dev/null; then
+				note "Do nothing -- we still have an old unmodified configure.ac"
+			else
+				note Executing glib-gettextize --force --copy
+				echo "no" | glib-gettextize --force --copy
+			fi
+		fi
+		if grep "^[AI][CT]_PROG_INTLTOOL" $CONFIGURE_AC >/dev/null; then
+			note Executing intltoolize --copy --force --automake
+			intltoolize --copy --force --automake
+		fi
+		mkdir -p m4
+		# shellcheck disable=SC2086
+		note Executing autoreconf --verbose --install ${EXTRA_AUTORECONF} $acpaths ${CONFIGURE_AC}
+		# shellcheck disable=SC2086
+		autoreconf -Wcross --verbose --install ${EXTRA_AUTORECONF} $acpaths ${CONFIGURE_AC} || fatal "autoreconf execution failed"
+		cd "$olddir"
+	fi
+}
+
+cd "${S}"
+echo Source directory: "${S}"
+echo Extra configure arguments: "${EXTRA_CONF}"
+
+if [ -f Makefile ] ; then
+	note "Makefile present; nothing to configure"
+else
+	if [ -x configure ]; then
+		note "configure present; nothing to reconfigure"
+	else
+		autotools_do_configure "${S}"
+	fi
+	run_configure "$@"
+fi

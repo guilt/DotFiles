@@ -1,0 +1,13 @@
+#!/bin/sh
+# Portable Configuration for Home Directories!
+
+set -e
+
+[ -e ../CMakeLists.txt ] || exit 1
+
+BLD_TYPE=Release
+# shellcheck disable=SC2124
+CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=${BLD_TYPE} -DSHARED=OFF -DBUILD_SHARED_LIBS=OFF -DWANT_TESTS=OFF $@"
+
+# shellcheck disable=SC2086
+exec cmake -DCMAKE_INSTALL_PREFIX="$EPREFIX" $CMAKE_FLAGS ..

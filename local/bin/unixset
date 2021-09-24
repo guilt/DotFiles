@@ -1,0 +1,37 @@
+#!/bin/sh
+# shellcheck disable=SC2236
+
+PREFIX=._unixset_
+
+perform_op () {
+	cat "$1" "$2" > "$3"
+}
+
+perform_set () {
+	FILE1="$1"
+	shift
+	FILE2="$1"
+	shift
+
+	DATE=$(date +%Y%m%d%H%M%S)
+
+	[ -z "$FILE1" ] && exit
+	[ -f "$FILE1" ] || exit
+
+	OUTFILE=
+	while [ ! -z "$FILE2" ]; do
+		[ -f "$FILE2" ] || exit
+		if [ -z "$OUTFILE" ] ; then
+			OUTFILE="${PREFIX}_${DATE}"
+			perform_op "$FILE1" "$FILE2" "$OUTFILE"
+		else
+			OUTFILE="${PREFIX}_${DATE}"
+			perform_op "$FILE1" "$FILE2" "$OUTFILE"
+			rm "$FILE1"
+		fi
+		FILE1="$OUTFILE"
+		FILE2="$1"
+		shift
+	done
+	[ -f "$OUTFILE" ] && cat "$OUTFILE" && rm "$OUTFILE"
+}

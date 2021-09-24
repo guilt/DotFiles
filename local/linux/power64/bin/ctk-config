@@ -1,0 +1,130 @@
+#!/bin/sh
+# CTK - The Cell Tool Kit Library
+# http://ctk-dev.sourceforge.net/
+# http://cell.fixstars.com/ctk/
+#
+# Copyright (C) 2006-2008 Fixstars Corp.
+#
+# This library is free software; you can redistribute it and/or modify it
+# under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation; either version 2.1 of the License,
+# or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+# or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+# License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with this library; if not, write to the Free Software Foundation,
+# Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+
+prefix=/home/karthik/local/linux
+exec_prefix=/home/karthik/local/linux/power64
+
+print_error() {
+    echo "$*" 1>&2
+}
+
+usage() {
+    cmd=`basename $0`
+    print_error "Usage:   $cmd [option [options...]]"
+    print_error "Options:"
+    print_error "  --ppu-cc:      prints out CC for PPU"
+    print_error "  --ppu-cxx:     prints out CXX for PPU"
+    print_error "  --ppu-ld:      prints out LD for PPU"
+    print_error "  --ppu-cflags:  prints out CFLAGS for PPU"
+    print_error "  --ppu-cxxflags:prints out CXXFLAGS for PPU"
+    print_error "  --ppu-ldflags: prints out LDFLAGS for PPU"
+    print_error "  --ppu-libs:    prints out LIBS for PPU"
+    print_error "  --spu-cc:      prints out CC for SPU"
+    print_error "  --spu-cxx:     prints out CXX for SPU"
+    print_error "  --spu-ld:      prints out LD for SPU"
+    print_error "  --spu-cflags:  prints out CFLAGS for SPU"
+    print_error "  --spu-cxxflags:prints out CXXFLAGS for SPU"
+    print_error "  --spu-ldflags: prints out LDFLAGS for SPU"
+    print_error "  --spu-libs:    prints out LIBS for SPU"
+    print_error "  --spu-strip:   prints out STRIP for SPU"
+    print_error "  --spu-task-ldflags: prints out LDFLAGS for SPU task"
+    print_error "  --embedspu:    prints out EMBEDSPU"
+    print_error ""
+    print_error "Example usage:"
+    print_error " $ \`$cmd --ppu-cc\` ppu_main.c \`$cmd --ppu-cflags\`"
+    exit 1;
+}
+
+check_options() {
+    [ $# -lt 1 ] && usage
+
+    dirname=`dirname $0`
+    [ x$dirname != "x." ] && {
+        case $dirname in
+        /*) execprefix=$dirname/.. ;;
+        *) execprefix=`pwd`/$dirname/.. ;;
+        esac
+    }
+
+    while test $# -gt 0; do
+        case $1 in 
+        --ppu-cc)      echo -n "/usr/bin/ppu-gcc " ;;
+        --ppu-cxx)     echo -n "/usr/bin/ppu-g++ " ;;
+        --ppu-ld)      echo -n "/usr/bin/ppu-ld " ;;
+        --ppu-cflags)  
+            echo -n "-m64 -maltivec "
+            #if [ x$execprefix != "x" ]; then
+            #    echo -n "-I$execprefix/include "
+            #fi
+            echo -n "-I/home/karthik/local/linux/include "
+            ;;
+        --ppu-cxxflags)  
+            echo -n "-m64 -maltivec "
+            echo -n "-I/home/karthik/local/linux/include "
+            ;;
+        --ppu-ldflags)
+            echo -n "-L/home/karthik/local/linux/lib:/home/karthik/local/linux/libexec:/home/karthik/local/linux/power64/lib:/home/karthik/local/linux/power64/libexec:/home/karthik/local/linux/lib:/home/karthik/local/linux/libexec:/home/karthik/local/lib:/home/karthik/local/libexec:/home/karthik/local/linux/lib:/home/karthik/local/linux/libexec:/home/karthik/local/linux/power64/lib:/home/karthik/local/linux/power64/libexec:/home/karthik/local/linux/lib:/home/karthik/local/linux/libexec:/home/karthik/local/lib:/home/karthik/local/libexec:/home/karthik/local/linux/lib:/home/karthik/local/linux/libexec:/home/karthik/local/linux/power64/lib:/home/karthik/local/linux/power64/libexec:/home/karthik/local/linux/lib:/home/karthik/local/linux/libexec:/home/karthik/local/lib:/home/karthik/local/libexec: -L/home/karthik/local/linux/lib:/home/karthik/local/linux/libexec:/home/karthik/local/linux/power64/lib:/home/karthik/local/linux/power64/libexec:/home/karthik/local/linux/lib:/home/karthik/local/linux/libexec:/home/karthik/local/lib:/home/karthik/local/libexec:/home/karthik/local/linux/lib:/home/karthik/local/linux/libexec:/home/karthik/local/linux/power64/lib:/home/karthik/local/linux/power64/libexec:/home/karthik/local/linux/lib:/home/karthik/local/linux/libexec:/home/karthik/local/lib:/home/karthik/local/libexec: -L/home/karthik/local/linux/lib:/home/karthik/local/linux/libexec:/home/karthik/local/linux/power64/lib:/home/karthik/local/linux/power64/libexec:/home/karthik/local/linux/lib:/home/karthik/local/linux/libexec:/home/karthik/local/lib:/home/karthik/local/libexec:  -m64 -L/usr/lib64 -R/usr/lib64 "
+            #if [ x$execprefix != "x" ]; then
+            #    echo -n "-L$execprefix/lib -R$execprefix/lib "
+            #fi
+            echo -n "-L/home/karthik/local/linux/power64/lib -R/home/karthik/local/linux/power64/lib "
+            ;;
+        #--ppu-libs)    echo -n "-lctk  " ;;
+        --ppu-libs)    echo -n "-lctk " ;;
+        --spu-cc)      echo -n "/usr/bin/spu-gcc " ;;
+        --spu-cxx)     echo -n "/usr/bin/spu-g++ " ;;
+        --spu-ld)      echo -n "|#_!!_# /usr/bin/ppu-ld " ;;
+        --spu-cflags)
+            echo -n " "
+            #if [ x$execprefix != "x" ]; then
+            #    echo -n "-I$execprefix/include "
+            #fi
+            echo -n "-I/home/karthik/local/linux/include "
+            ;;
+        --spu-cxxflags)  
+            echo -n " "
+            echo -n "-I/home/karthik/local/linux/include "
+            echo -n "-Os -fno-rtti -fno-exceptions "
+            ;;
+        --spu-ldflags)
+            echo -n " "
+            #if [ x$execprefix != "x" ]; then
+            #    echo -n "-L$execprefix/lib "
+            #fi
+            echo -n " "
+            echo -n "-L/home/karthik/local/linux/power64/lib/spu "
+            ;;
+        --spu-task-ldflags)
+            echo -n " "
+            echo -n " "
+            echo -n "-Ttext 0x5000 "
+            echo -n "-L/home/karthik/local/linux/power64/lib/spu "
+            ;;
+        --spu-libs)    echo -n "-lctk_spu   " ;;
+        --spu-strip)   echo -n "/usr/bin/spu-strip " ;;
+        --embedspu)    echo -n "/usr/bin/ppu-embedspu " ;;
+        *) usage ;;
+        esac
+        shift
+    done
+}
+
+check_options $*

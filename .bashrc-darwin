@@ -1,0 +1,63 @@
+# ~/.bashrc-darwin
+# shellcheck disable=SC2148,SC2034,SC1090
+
+#Darwin setup
+export COPYFILE_DISABLE=true
+
+export EDITOR=vim
+
+export GOPATH=$HOME/.go
+PATH=$PATH:$GOPATH/bin
+
+export CARGO_HOME=$HOME/.cargo
+[ -f "${CARGO_HOME}/env" ] && source "${CARGO_HOME}/env"
+
+export RVM_HOME=~/.rvm
+[ -f "${RVM_HOME}/scripts/rvm" ] && source "${RVM_HOME}/scripts/rvm"
+
+export PYTHON_HOME=~/.python
+export VIRTUAL_ENV_DISABLE_PROMPT=1
+[ -f "${PYTHON_HOME}/bin/activate" ] && source "${PYTHON_HOME}/bin/activate"
+
+export DENO_HOME=~/.deno
+PATH=$PATH:$DENO_HOME/bin
+
+CC=clang
+CXX=clang++
+
+if [ -x /usr/libexec/java_home ]; then
+    JAVA_HOME=$(/usr/libexec/java_home)
+    export JAVA_HOME
+fi
+
+export MYSQL_HOME=/usr/local/mysql
+PATH=$PATH:$MYSQL_HOME/bin
+C_INCLUDE_PATH=$C_INCLUDE_PATH:$MYSQL_HOME/include
+CPLUS_INCLUDE_PATH=$CPLUS_INCLUDE_PATH:$MYSQL_HOME/include
+LIBRARY_PATH=$LIBRARY_PATH:$MYSQL_HOME/lib
+DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$MYSQL_HOME/lib
+MANPATH=$MANPATH:$MYSQL_HOME/man
+
+export PG_HOME=/Library/PostgreSQL/9.4/
+PATH=$PATH:$PG_HOME/bin
+C_INCLUDE_PATH=$C_INCLUDE_PATH:$PG_HOME/include
+CPLUS_INCLUDE_PATH=$CPLUS_INCLUDE_PATH:$PG_HOME/include
+LIBRARY_PATH=$LIBRARY_PATH:$PG_HOME/lib
+DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$PG_HOME/lib
+MANPATH=$MANPATH:$PG_HOME/share/man
+export PGUSER=postgres
+
+export MAGICK_HOME=/opt/ImageMagick
+PATH=$MAGICK_HOME/bin:$PATH
+LD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$MAGICK_HOME/lib/
+DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$MAGICK_HOME/lib/
+MANPATH=$MANPATH:$MAGICK_HOME/share/man
+
+export CUDA_HOME=/Developer/NVIDIA/CUDA-7.5
+export CUDA_ROOT=$CUDA_HOME
+PATH=$CUDA_HOME/bin:$PATH
+C_INCLUDE_PATH=$C_INCLUDE_PATH:$CUDA_HOME/include
+CPLUS_INCLUDE_PATH=$CPLUS_INCLUDE_PATH:$CUDA_HOME/include
+LIBRARY_PATH=$CUDA_HOME/lib:$LIBRARY_PATH
+DYLD_LIBRARY_PATH=$CUDA_HOME/lib:$DYLD_LIBRARY_PATH
+MANPATH=$MANPATH:$CUDA_HOME/doc/man

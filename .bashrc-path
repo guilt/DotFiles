@@ -1,0 +1,127 @@
+# ~/.bashrc-path
+# shellcheck disable=SC2148,SC2166
+
+#Local and Installation Paths
+ostype=$(uname -s 2>/dev/null)
+case "$ostype" in
+  "Linux" | "GNU/Linux" )   ostype=linux;;
+  "FreeBSD" )               ostype=freebsd;;
+  "DragonflyBSD" )          ostype=freebsd;;
+  "OpenBSD" )               ostype=openbsd;;
+  "NetBSD" )                ostype=netbsd;;
+  "SunOS" )                 ostype=solaris;;
+  "Darwin" )                ostype=darwin;;
+  MINGW* )                  ostype=windows;;
+  * )                       ostype=exotic;;
+esac
+OSTYPE=$ostype
+
+PATH=$PATH:/bin:/usr/bin:/sbin:/usr/sbin
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/lib:/usr/lib:/usr/libexec
+DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:/lib:/usr/lib:/usr/libexec
+
+if [ "$ostype" = "freebsd" -o "$ostype" = "openbsd" ] ; then
+	PATH=$PATH:/bin:/usr/local/bin:/usr/local/sbin
+	LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+	LOCAL_INCLUDE_PATH=$LOCAL_INCLUDE_PATH:/usr/local/include
+	LOCAL_LIBRARY_PATH=$LOCAL_LIBRARY_PATH:/usr/local/lib:/usr/local/libexec
+	MANPATH=$MANPATH:/usr/local/man
+	INFOPATH=$INFOPATH:/usr/local/info
+	PERL5LIB=$PERL5LIB:/usr/local/share/perllib
+	PYTHONPATH=$PYTHONPATH:/usr/local/lib/python2.7/site-packages
+fi
+if [ "$ostype" = "solaris" ] ; then
+	PATH=$PATH:/bin:/usr/ccs/bin:/usr/local/bin:/usr/local/sbin
+	LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/ccs/lib:/usr/local/lib
+	LOCAL_INCLUDE_PATH=$LOCAL_INCLUDE_PATH:/usr/local/include
+	LOCAL_LIBRARY_PATH=$LOCAL_LIBRARY_PATH:/usr/ccs/lib:/usr/local/lib:/usr/local/libexec
+	MANPATH=$MANPATH:/usr/local/share/man
+	INFOPATH=$INFOPATH:/usr/local/share/info
+	PERL5LIB=$PERL5LIB:/usr/local/share/perllib
+fi
+if [ "$ostype" = "darwin" ] ; then
+	PATH=$PATH:/opt/local/bin:/opt/local/sbin
+	LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/local/libexec
+	DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:/usr/local/lib:/usr/local/libexec
+	LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/local/lib:/opt/local/libexec
+	DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:/opt/local/lib:/opt/local/libexec
+	LOCAL_INCLUDE_PATH=$LOCAL_INCLUDE_PATH:/opt/local/include
+	LOCAL_LIBRARY_PATH=$LOCAL_LIBRARY_PATH:/opt/local/lib:/opt/local/libexec
+	MANPATH=$MANPATH:/usr/share/man/:/opt/local/man
+	INFOPATH=$INFOPATH:/opt/local/info
+	PERL5LIB=$PERL5LIB:/opt/local/share/perllib
+	PYTHONPATH=$PYTHONPATH:/opt/local/lib/python2.7/site-packages
+fi
+
+DATAROOTDIR=$HOME/local
+
+PATH=$DATAROOTDIR/bin:$DATAROOTDIR/sbin:$PATH
+LOCAL_LD_LIBRARY_PATH=$DATAROOTDIR/lib:$DATAROOTDIR/libexec
+LOCAL_DYLD_LIBRARY_PATH=$DATAROOTDIR/lib:$DATAROOTDIR/libexec
+LOCAL_INCLUDE_PATH=$DATAROOTDIR/include:$LOCAL_INCLUDE_PATH
+LOCAL_LIBRARY_PATH=$DATAROOTDIR/lib:$DATAROOTDIR/libexec:$LOCAL_LIBRARY_PATH
+MANPATH=$DATAROOTDIR/share/man:$MANPATH
+INFOPATH=$DATAROOTDIR/share/info:$INFOPATH
+PERL5LIB=$DATAROOTDIR/share/perllib:$PERL5LIB
+
+PREFIX=$DATAROOTDIR/$OSTYPE
+
+PATH=$PREFIX/bin:$PREFIX/sbin:$PATH
+LOCAL_LD_LIBRARY_PATH=$PREFIX/lib:$PREFIX/libexec:$LOCAL_LD_LIBRARY_PATH
+LOCAL_DYLD_LIBRARY_PATH=$PREFIX/lib:$PREFIX/libexec:$LOCAL_DYLD_LIBRARY_PATH
+LOCAL_INCLUDE_PATH=$PREFIX/include:$LOCAL_INCLUDE_PATH
+LOCAL_LIBRARY_PATH=$PREFIX/lib:$PREFIX/libexec:$LOCAL_LIBRARY_PATH
+MANPATH=$PREFIX/share/man:$MANPATH
+INFOPATH=$PREFIX/share/info:$INFOPATH
+PERL5LIB=$PREFIX/share/perllib:$PERL5LIB
+
+mtype=$(uname -p 2>/dev/null)
+omtype=$(uname -m 2>/dev/null)
+
+if [ "$mtype" != "$omtype" -a "$omtype" != "" ] ; then
+	mtype=$omtype
+fi
+
+case "$mtype" in
+  i[34567]86* )                                   ;;
+  "x86_64" | "amd64" )                            ;;
+  armv[12345678]* )                               ;;
+  "sparc" )                                       ;;
+  "sparc64" )                                     ;;
+  "ppc" | "powerpc" | "ppc32" | "powerpc32" )     ;;
+  "ppc64" | "powerpc64" )                         ;;
+  "armv7l" | "armv6l" )                           ;;
+  "aarch64" )                                     ;;
+  * )                                             mtype=$(uname -m 2>/dev/null);;
+esac
+
+case "$mtype" in
+  i[34567]86* )                                    mtype=i386;;
+  "x32" | "x86" | "x86pc" )                        mtype=i386;;
+  "x86_64" | "amd64" )                              mtype=x64;;
+  armv[1234567]* )                                  mtype=arm;;
+  armv[8]* | "arm64" | "aarch64"  )               mtype=arm64;;
+  "sparc" )                                       mtype=sparc;;
+  "sparc64" )                                   mtype=sparc64;;
+  "ppc" | "powerpc" | "ppc32" | "powerpc32" )     mtype=power;;
+  "ppc64" | "powerpc64" )                       mtype=power64;;
+  * )                                            mtype=exotic;;
+esac
+
+MTYPE=$mtype
+
+EPREFIX=$DATAROOTDIR/$OSTYPE/$MTYPE
+
+PATH=$EPREFIX/bin:$EPREFIX/sbin:$PATH
+LOCAL_LD_LIBRARY_PATH=$EPREFIX/lib:$EPREFIX/libexec:$LOCAL_LD_LIBRARY_PATH
+LOCAL_DYLD_LIBRARY_PATH=$EPREFIX/lib:$EPREFIX/libexec:$LOCAL_DYLD_LIBRARY_PATH
+LOCAL_INCLUDE_PATH=$EPREFIX/include:$LOCAL_INCLUDE_PATH
+LOCAL_LIBRARY_PATH=$EPREFIX/lib:$EPREFIX/libexec:$LOCAL_LIBRARY_PATH
+MANPATH=$EPREFIX/share/man:$MANPATH
+INFOPATH=$EPREFIX/share/info:$INFOPATH
+PERL5LIB=$EPREFIX/share/perllib:$PERL5LIB
+
+HOSTNAME=${HOSTNAME:-$(hostname --fqdn 2>/dev/null)}
+HOSTNAME=${HOSTNAME:-$(hostname -f 2>/dev/null)}
+HOSTNAME=${HOSTNAME:-$(hostname 2>/dev/null)}
+HOSTNAME=${HOSTNAME:-local}

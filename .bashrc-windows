@@ -1,0 +1,6 @@
+# ~/.bashrc-windows
+# shellcheck disable=SC2148
+
+#Windows setup
+
+alias open=start

@@ -1,0 +1,36 @@
+#!/bin/sh
+
+P7ZARGS="-m0=lzma -mx=9 -mfb=64 -md=64m -ms=on"
+
+DIRNAME="$1"
+
+if [ "$DIRNAME" = "/" ] ; then
+  ARCHNAME=ARCHIVE.7Z
+else
+  DIRNAME=$(echo "$DIRNAME" | sed 's/\/$//g')
+  ARCHNAME="$DIRNAME.7Z"
+fi
+
+if [ "$DIRNAME" = "" ]; then
+  DIRNAME=.
+fi
+
+if [ "$DIRNAME" = "." ] ; then
+  ARCHNAME=ARCHIVE.7Z
+fi
+
+if [ -f "$DIRNAME" ] ; then
+  DIREXT=${DIRNAME##*.}
+  echo "$DIREXT"
+  if [ "$DIREXT" = "$DIRNAME" ] ; then
+    ARCHNAME=$(basename "$DIRNAME" "$DIREXT").7Z
+  else
+    ARCHNAME=$(basename "$DIRNAME" "$DIREXT")7Z
+  fi
+fi
+shift
+
+for p7z in 7z 7za 7zr p7z ; do
+    # shellcheck disable=SC2086
+    which $p7z >/dev/null 2>&1 && exec $p7z a -t7z ${P7ZARGS} "$@" "$ARCHNAME" "$DIRNAME"
+done

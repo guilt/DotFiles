@@ -1,0 +1,38 @@
+#!/bin/sh
+
+WS_LOC=${HOME:-~}
+[ -d "$WS_LOC" ] || WS_LOC=/home/user
+
+WS_DIR=WS
+WSBK_DIR=WSBK
+DATE=$(date +%Y%m%d%H)
+HOSTNAME=${HOSTNAME:-$(hostname -s)}
+
+WSBK_LOCS=/backup:/mnt/datapool/:/nfs/datapool:/mnt/d/:/d:"/Volumes/Data\ HD/":/media/DATAEXT
+
+cd "$WS_LOC" || exit 1
+if [ -d "$WS_DIR" ] ; then
+	WS_ACT_DIR=$(readlink WS)
+	[ -z "$WS_ACT_DIR" ] && WS_ACT_DIR=WS
+        WSBK_FILE="$(pwd)/WSBK-${HOSTNAME}-${DATE}.tar.bz2"
+
+	tar -C "$WS_ACT_DIR" -jcpf "${WSBK_FILE}" .
+
+
+	if [ -f "${WSBK_FILE}" ] ; then
+		echo "$WSBK_LOCS" | tr : "\n" | while read -r WSBK_LOC; do
+			if [ -d "$WSBK_LOC" ] ; then
+				mkdir -p "${WSBK_LOC}/${WSBK_DIR}"
+				cp "${WSBK_FILE}" "${WSBK_LOC}/${WSBK_DIR}" ||
+				sudo cp "${WSBK_FILE}" "${WSBK_LOC}/${WSBK_DIR}" ||
+				exit 1
+			fi
+		done ;
+	fi
+
+	if [ -f WSBK-CURRENT.tar.bz2 ] ; then
+		mv WSBK-CURRENT.tar.bz2 WSBK-OLD.tar.bz2 && \
+		mv "${WSBK_FILE}" WSBK-CURRENT.tar.bz2 && \
+		rm -f WSBK-OLD.tar.bz2
+	fi
+fi

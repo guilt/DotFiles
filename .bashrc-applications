@@ -1,0 +1,31 @@
+# ~/.bashrc-applications
+# shellcheck disable=SC2148,SC2209
+
+# Applications
+
+BROWSER=${BROWSER:-}
+[ -z "$BROWSER" ] && which firefox >/dev/null 2>&1 && BROWSER=firefox
+[ -z "$BROWSER" ] && which mozilla-firefox >/dev/null 2>&1 && BROWSER=mozilla-firefox
+[ -z "$BROWSER" ] && which google-chrome >/dev/null 2>&1 && BROWSER=google-chrome
+[ -z "$BROWSER" ] && which chrome >/dev/null 2>&1 && BROWSER=chrome
+[ -z "$BROWSER" ] && which chromium >/dev/null 2>&1 && BROWSER=chromium
+[ -z "$BROWSER" ] && which safari >/dev/null 2>&1 && BROWSER=safari
+[ -z "$BROWSER" ] && which netscape >/dev/null 2>&1 && BROWSER=netscape
+[ -z "$BROWSER" ] && which mozilla >/dev/null 2>&1 && BROWSER=mozilla
+[ -z "$BROWSER" ] && which elinks >/dev/null 2>&1 && BROWSER=elinks
+[ -z "$BROWSER" ] && which links >/dev/null 2>&1 && BROWSER=links
+[ -z "$BROWSER" ] && which lynx >/dev/null 2>&1 && BROWSER=lynx
+
+EDITOR=${EDITOR:-}
+[ -z "$EDITOR" ] && which vi >/dev/null 2>&1 && EDITOR=vi
+[ -z "$EDITOR" ] && which vim >/dev/null 2>&1 && EDITOR=vim
+[ -z "$EDITOR" ] && which nvim >/dev/null 2>&1 && EDITOR=nvim
+
+PAGER=${PAGER:-}
+[ -z "$PAGER" ] && which most >/dev/null 2>&1 && PAGER=$(wich most)
+[ -z "$PAGER" ] && which more >/dev/null 2>&1 && PAGER=$(which more)
+[ -z "$PAGER" ] && which less >/dev/null 2>&1 && PAGER=$(which less)
+
+export EDITOR
+export BROWSER
+export PAGER
