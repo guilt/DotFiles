@@ -1,5 +1,5 @@
 # ~/.bashrc-darwin
-# shellcheck disable=SC2148,SC2034,SC1090
+# shellcheck disable=SC2148,SC2034,SC1090,SC1091
 
 #Darwin setup
 export COPYFILE_DISABLE=true
@@ -61,3 +61,6 @@ CPLUS_INCLUDE_PATH=$CPLUS_INCLUDE_PATH:$CUDA_HOME/include
 LIBRARY_PATH=$CUDA_HOME/lib:$LIBRARY_PATH
 DYLD_LIBRARY_PATH=$CUDA_HOME/lib:$DYLD_LIBRARY_PATH
 MANPATH=$MANPATH:$CUDA_HOME/doc/man
+
+export BREW_HOME=/opt/homebrew
+PATH=$BREW_HOME/bin:$PATH
