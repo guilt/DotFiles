@@ -1,0 +1,5 @@
+# ~/.bashrc-Karthiks-Mac-mini.local-session
+# shellcheck disable=SC2148
+
+# Karthiks-Mac-mini Setup
+which neofetch 2>&1 >/dev/null && neofetch --package_managers off --disable packages
