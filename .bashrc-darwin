@@ -17,7 +17,17 @@ export RVM_HOME=~/.rvm
 
 export PYTHON_HOME=~/.python
 export VIRTUAL_ENV_DISABLE_PROMPT=1
-[ -f "${PYTHON_HOME}/bin/activate" ] && source "${PYTHON_HOME}/bin/activate"
+if [ -f "${PYTHON_HOME}/bin/activate" ]; then
+    source "${PYTHON_HOME}/bin/activate"
+else
+    LOCAL_PYTHON3_VERSION=$(python3 -V 2>&1 | cut -d . -f 1,2 | cut -d  " " -f 2)
+    export LOCAL_PYTHON3=$HOME/Library/Python/${LOCAL_PYTHON3_VERSION}
+    export PATH=$PATH:$LOCAL_PYTHON3/bin
+
+    LOCAL_PYTHON2_VERSION=$(python2 -V 2>&1 | cut -d . -f 1,2 | cut -d  " " -f 2)
+    export LOCAL_PYTHON2=$HOME/Library/Python/${LOCAL_PYTHON2_VERSION}
+    export PATH=$PATH:$LOCAL_PYTHON2/bin
+fi
 
 export DENO_HOME=~/.deno
 PATH=$PATH:$DENO_HOME/bin
@@ -62,5 +72,8 @@ LIBRARY_PATH=$CUDA_HOME/lib:$LIBRARY_PATH
 DYLD_LIBRARY_PATH=$CUDA_HOME/lib:$DYLD_LIBRARY_PATH
 MANPATH=$MANPATH:$CUDA_HOME/doc/man
 
-export BREW_HOME=/opt/homebrew
+export BREW_HOME=/usr/local/bin/homebrew
+if [ "$MTYPE" = "arm64" ]; then
+    export BREW_HOME=/opt/homebrew
+fi
 PATH=$BREW_HOME/bin:$PATH
