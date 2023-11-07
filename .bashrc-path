@@ -2,24 +2,33 @@
 # shellcheck disable=SC2148,SC2166
 
 #Local and Installation Paths
-ostype=$(uname -s 2>/dev/null)
-case "$ostype" in
-  "Linux" | "GNU/Linux" )   ostype=linux;;
-  "FreeBSD" )               ostype=freebsd;;
-  "DragonflyBSD" )          ostype=freebsd;;
-  "OpenBSD" )               ostype=openbsd;;
-  "NetBSD" )                ostype=netbsd;;
-  "SunOS" )                 ostype=solaris;;
-  "Darwin" )                ostype=darwin;;
-  MINGW* )                  ostype=windows;;
-  * )                       ostype=exotic;;
-esac
-OSTYPE=$ostype
 
+# Common Paths
 PATH=$PATH:/bin:/usr/bin:/sbin:/usr/sbin
 LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/lib:/usr/lib:/usr/libexec
 DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:/lib:/usr/lib:/usr/libexec
 
+# Detect OS
+ostype=$(uname -s 2>/dev/null)
+case "$ostype" in
+  "Linux" | "GNU/Linux" )   ostype=linux;;
+  "GNU" )                   ostype=hurd;;
+  *FreeBSD* )               ostype=freebsd;;
+  "DragonflyBSD" )          ostype=dflybsd;;
+  "OpenBSD" )               ostype=openbsd;;
+  "NetBSD" )                ostype=netbsd;;
+  "SunOS" )                 ostype=solaris;;
+  "Darwin" )                ostype=darwin;;
+  "Haiku" | Be* )           ostype=be;;
+  "HP-UX" )                 ostype=ux;;
+  "AIX" )                   ostype=aix;;
+  MINGW* | *NT* | *WIN* )   ostype=windows;;
+  *DOS* )                   ostype=dos;;
+  * )                       ostype=exotic;;
+esac
+OSTYPE=$ostype
+
+# Set OS Type Common Paths
 if [ "$ostype" = "freebsd" -o "$ostype" = "openbsd" ] ; then
 	PATH=$PATH:/bin:/usr/local/bin:/usr/local/sbin
 	LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
@@ -53,6 +62,43 @@ if [ "$ostype" = "darwin" ] ; then
 	PYTHONPATH=$PYTHONPATH:/opt/local/lib/python2.7/site-packages
 fi
 
+# Detect Machine
+ptype=$(uname -p 2>/dev/null)
+mtype=$(uname -m 2>/dev/null)
+
+if [ "$mtype" = "" ]; then
+mtype=$ptype
+fi
+
+case "$mtype" in
+  "x86_64" | x64* | "amd64" | "AMD64" )           mtype=amd64;;
+  i[34567]86* | x86* | "x32" | "Intel" | Be*PC )   mtype=i386;;
+  "ia64" | "IA64" | "itanium" )                    mtype=ia64;;
+  armv[89]* | arm64 | "aarch64" | "ARM64" )       mtype=arm64;;
+  armv[1234567]* | arm | armel | armhf )            mtype=arm;;
+  "mips64" )                                     mtype=mips64;;
+  "mips64el" )                                 mtype=mips64el;;
+  "mips" )                                         mtype=mips;;
+  "mipsel" )                                     mtype=mipsel;;
+  "microblaze" )                             mtype=microblaze;;
+  "sparc64" )                                   mtype=sparc64;;
+  "sparc" )                                       mtype=sparc;;
+  p*pc | p*pc32 | "PPC" | BeMac | BeBox )         mtype=power;;
+  p*pc64 | "PPC64" )                            mtype=power64;;
+  p*pc64el )                                  mtype=power64el;;
+  "riscv" | "riscv32" )                           mtype=riscv;;
+  "riscv64" | "rv64" )                          mtype=riscv64;;
+  * )                                            mtype=exotic;;
+esac
+
+# Kludge macOS till we generate ARM64 Binaries.
+# if [ "$OSTYPE" = "darwin " -a "$mtype" = "arm64" ]; then
+#     mtype=amd64
+# fi
+
+MTYPE=$mtype
+
+# Set Local Paths
 DATAROOTDIR=$HOME/local
 
 PATH=$DATAROOTDIR/bin:$DATAROOTDIR/sbin:$PATH
@@ -64,6 +110,7 @@ MANPATH=$DATAROOTDIR/share/man:$MANPATH
 INFOPATH=$DATAROOTDIR/share/info:$INFOPATH
 PERL5LIB=$DATAROOTDIR/share/perllib:$PERL5LIB
 
+# Set OS Type Local Paths
 PREFIX=$DATAROOTDIR/$OSTYPE
 
 PATH=$PREFIX/bin:$PREFIX/sbin:$PATH
@@ -75,41 +122,7 @@ MANPATH=$PREFIX/share/man:$MANPATH
 INFOPATH=$PREFIX/share/info:$INFOPATH
 PERL5LIB=$PREFIX/share/perllib:$PERL5LIB
 
-mtype=$(uname -p 2>/dev/null)
-omtype=$(uname -m 2>/dev/null)
-
-if [ "$mtype" != "$omtype" -a "$omtype" != "" ] ; then
-	mtype=$omtype
-fi
-
-case "$mtype" in
-  i[34567]86* )                                   ;;
-  "x86_64" | "amd64" )                            ;;
-  armv[12345678]* )                               ;;
-  "sparc" )                                       ;;
-  "sparc64" )                                     ;;
-  "ppc" | "powerpc" | "ppc32" | "powerpc32" )     ;;
-  "ppc64" | "powerpc64" )                         ;;
-  "armv7l" | "armv6l" )                           ;;
-  "aarch64" )                                     ;;
-  * )                                             mtype=$(uname -m 2>/dev/null);;
-esac
-
-case "$mtype" in
-  i[34567]86* )                                    mtype=i386;;
-  "x32" | "x86" | "x86pc" )                        mtype=i386;;
-  "x86_64" | "amd64" )                              mtype=x64;;
-  armv[1234567]* )                                  mtype=arm;;
-  armv[8]* | "arm64" | "aarch64"  )               mtype=arm64;;
-  "sparc" )                                       mtype=sparc;;
-  "sparc64" )                                   mtype=sparc64;;
-  "ppc" | "powerpc" | "ppc32" | "powerpc32" )     mtype=power;;
-  "ppc64" | "powerpc64" )                       mtype=power64;;
-  * )                                            mtype=exotic;;
-esac
-
-MTYPE=$mtype
-
+# Set Machine Local Paths
 EPREFIX=$DATAROOTDIR/$OSTYPE/$MTYPE
 
 PATH=$EPREFIX/bin:$EPREFIX/sbin:$PATH
@@ -121,6 +134,7 @@ MANPATH=$EPREFIX/share/man:$MANPATH
 INFOPATH=$EPREFIX/share/info:$INFOPATH
 PERL5LIB=$EPREFIX/share/perllib:$PERL5LIB
 
+# Set Hostname
 HOSTNAME=${HOSTNAME:-$(hostname --fqdn 2>/dev/null)}
 HOSTNAME=${HOSTNAME:-$(hostname -f 2>/dev/null)}
 HOSTNAME=${HOSTNAME:-$(hostname 2>/dev/null)}

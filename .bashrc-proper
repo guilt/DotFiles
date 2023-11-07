@@ -50,6 +50,9 @@ esac
 #Set Bash Prompt
 [ -z "$BASH_VERSION" ] || PS1=' \W >> '
 
+#Set ZSH Prompt
+[ -z "$ZSH_VERSION" ] || PROMPT=' %/ >> '
+
 #If Not Loaded!
 fi
 

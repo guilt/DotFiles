@@ -22,7 +22,7 @@ EDITOR=${EDITOR:-}
 [ -z "$EDITOR" ] && which nvim >/dev/null 2>&1 && EDITOR=nvim
 
 PAGER=${PAGER:-}
-[ -z "$PAGER" ] && which most >/dev/null 2>&1 && PAGER=$(wich most)
+[ -z "$PAGER" ] && which most >/dev/null 2>&1 && PAGER=$(which most)
 [ -z "$PAGER" ] && which more >/dev/null 2>&1 && PAGER=$(which more)
 [ -z "$PAGER" ] && which less >/dev/null 2>&1 && PAGER=$(which less)
 

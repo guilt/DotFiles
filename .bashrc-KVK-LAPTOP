@@ -1,0 +1,9 @@
+# ~/.bashrc-KVK-LAPTOP
+# shellcheck disable=SC2148,SC1090,SC2034
+
+# KVK-LAPTOP setup
+export MAKEFLAGS=j9
+
+find "$HOME/.bashrc-companies/" -type f | while read -r companyFile; do
+	source "$companyFile"
+done

@@ -1,0 +1,7 @@
+# ~/.bashrc-Karthiks-Mac-mini.local
+# shellcheck disable=SC2148,SC1090,SC2034
+
+# Karthiks-Mac-mini Setup
+export FLUTTER_HOME=$HOME/WSTOOLS/flutter
+export PATH=$PATH:$FLUTTER_HOME/bin
+export LANG=en_US.UTF-8

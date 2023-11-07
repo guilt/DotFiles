@@ -1,0 +1,6 @@
+#!/bin/sh
+
+N=${1:-2}
+
+git reset --soft HEAD~$N &&
+git commit --edit -m"$(git log --format=%B --reverse HEAD..HEAD@{1})"
