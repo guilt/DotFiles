@@ -1,0 +1,423 @@
+#!/bin/sh
+
+# Function to print debug messages if DEBUG is set
+logDebug() {
+    if [ -n "$DEBUG" ]; then
+        echo "DEBUG: $*" >&2
+    fi
+}
+
+# Function to print usage and exit
+printUsage() {
+    echo "Usage: $0 [--binary binaryName] [--binary-args args] path1 [path2 ...]"
+    echo "  --binary binaryName      Specify the binary name to search for (default: a.out)"
+    echo "  --binary-args args      Arguments to pass to the binary (default: none)"
+    exit 1
+}
+
+# Function to check if a command is available
+checkTool() {
+    toolName="$1"
+    logDebug "Checking for tool: $toolName"
+    command -v "$toolName" >/dev/null 2>&1
+    status=$?
+    if [ $status -eq 0 ]; then
+        logDebug "Tool $toolName found"
+    else
+        logDebug "Tool $toolName not found"
+    fi
+    return $status
+}
+
+# Function to check if a file is an archive
+isArchive() {
+    logDebug "Checking if $1 is an archive"
+    case "$1" in
+        *.tar | *.tar.gz | *.tgz | *.tar.xz | *.tar.bz2 | *.tbz2 | *.bz2 | *.zip | *.7z | *.zst | *.tar.zst | *.rar)
+            logDebug "$1 is a supported archive"
+            return 0
+            ;;
+        *)
+            logDebug "$1 is not a supported archive"
+            return 1
+            ;;
+    esac
+}
+
+# Function to extract an archive to a temporary directory
+extractArchive() {
+    archivePath="$1"
+    tempDir="$2"
+    logDebug "Attempting to create temp directory: $tempDir"
+    mkdir -p "$tempDir" || {
+        echo "FAIL: $archivePath - Cannot create temporary directory"
+        logDebug "Failed to create temp directory: $tempDir"
+        return 1
+    }
+    logDebug "Extracting archive: $archivePath to $tempDir"
+    case "$archivePath" in
+        *.tar)
+            checkTool tar || {
+                echo "FAIL: $archivePath - tar not available"
+                return 1
+            }
+            tar -xf "$archivePath" -C "$tempDir" 2>/dev/null || {
+                checkTool 7z && 7z x -o"$tempDir" "$archivePath" >/dev/null 2>&1 || {
+                    echo "FAIL: $archivePath - Failed to extract tar archive"
+                    logDebug "Failed to extract tar archive with tar or 7z"
+                    return 1
+                }
+                logDebug "Extracted tar archive with 7z"
+            }
+            ;;
+        *.tar.gz | *.tgz)
+            checkTool tar || {
+                echo "FAIL: $archivePath - tar not available"
+                return 1
+            }
+            tar -xzf "$archivePath" -C "$tempDir" 2>/dev/null || {
+                checkTool 7z && 7z x -o"$tempDir" "$archivePath" >/dev/null 2>&1 || {
+                    echo "FAIL: $archivePath - Failed to extract tar.gz/tgz archive"
+                    logDebug "Failed to extract tar.gz/tgz archive with tar or 7z"
+                    return 1
+                }
+                logDebug "Extracted tar.gz/tgz archive with 7z"
+            }
+            ;;
+        *.tar.xz)
+            checkTool xz || {
+                echo "FAIL: $archivePath - xz not available"
+                return 1
+            }
+            checkTool tar || {
+                echo "FAIL: $archivePath - tar not available"
+                return 1
+            }
+            tar -xJf "$archivePath" -C "$tempDir" 2>/dev/null || {
+                checkTool 7z && 7z x -o"$tempDir" "$archivePath" >/dev/null 2>&1 || {
+                    echo "FAIL: $archivePath - Failed to extract tar.xz archive"
+                    logDebug "Failed to extract tar.xz archive with tar or 7z"
+                    return 1
+                }
+                logDebug "Extracted tar.xz archive with 7z"
+            }
+            ;;
+        *.tar.bz2 | *.tbz2)
+            checkTool tar || {
+                echo "FAIL: $archivePath - tar not available"
+                return 1
+            }
+            checkTool bzip2 || {
+                echo "FAIL: $archivePath - bzip2 not available"
+                return 1
+            }
+            tar -xjf "$archivePath" -C "$tempDir" 2>/dev/null || {
+                checkTool 7z && 7z x -o"$tempDir" "$archivePath" >/dev/null 2>&1 || {
+                    echo "FAIL: $archivePath - Failed to extract tar.bz2/tbz2 archive"
+                    logDebug "Failed to extract tar.bz2/tbz2 archive with tar or 7z"
+                    return 1
+                }
+                logDebug "Extracted tar.bz2/tbz2 archive with 7z"
+            }
+            ;;
+        *.bz2)
+            checkTool bzip2 || {
+                echo "FAIL: $archivePath - bzip2 not available"
+                return 1
+            }
+            cp "$archivePath" "$tempDir/file.bz2" 2>/dev/null && bzip2 -d "$tempDir/file.bz2" 2>/dev/null || {
+                checkTool 7z && 7z x -o"$tempDir" "$archivePath" >/dev/null 2>&1 || {
+                    echo "FAIL: $archivePath - Failed to extract bz2 archive"
+                    logDebug "Failed to extract bz2 archive with bzip2 or 7z"
+                    return 1
+                }
+                logDebug "Extracted bz2 archive with 7z"
+            }
+            ;;
+        *.zip)
+            checkTool unzip || {
+                echo "FAIL: $archivePath - unzip not available"
+                return 1
+            }
+            unzip -q "$archivePath" -d "$tempDir" 2>/dev/null || {
+                checkTool 7z && 7z x -o"$tempDir" "$archivePath" >/dev/null 2>&1 || {
+                    echo "FAIL: $archivePath - Failed to extract zip archive"
+                    logDebug "Failed to extract zip archive with unzip or 7z"
+                    return 1
+                }
+                logDebug "Extracted zip archive with 7z"
+            }
+            ;;
+        *.7z)
+            checkTool 7z || {
+                echo "FAIL: $archivePath - 7z not available"
+                return 1
+            }
+            7z x -o"$tempDir" "$archivePath" >/dev/null 2>&1 || {
+                echo "FAIL: $archivePath - Failed to extract 7z archive"
+                logDebug "Failed to extract 7z archive"
+                return 1
+            }
+            ;;
+        *.zst | *.tar.zst)
+            checkTool zstd || {
+                echo "FAIL: $archivePath - zstd not available"
+                return 1
+            }
+            if [ "${archivePath##*.}" = "zst" ] && [ "${archivePath%.*}" != "${archivePath%.tar.zst}" ]; then
+                # Handle .tar.zst
+                checkTool tar || {
+                    echo "FAIL: $archivePath - tar not available"
+                    return 1
+                }
+                zstd -d -c "$archivePath" 2>/dev/null | tar -xf - -C "$tempDir" 2>/dev/null || {
+                    checkTool 7z && 7z x -o"$tempDir" "$archivePath" >/dev/null 2>&1 || {
+                        echo "FAIL: $archivePath - Failed to extract tar.zst archive"
+                        logDebug "Failed to extract tar.zst archive with zstd/tar or 7z"
+                        return 1
+                    }
+                    logDebug "Extracted tar.zst archive with 7z"
+                }
+            else
+                # Handle .zst
+                cp "$archivePath" "$tempDir/file.zst" 2>/dev/null && zstd -d "$tempDir/file.zst" 2>/dev/null || {
+                    checkTool 7z && 7z x -o"$tempDir" "$archivePath" >/dev/null 2>&1 || {
+                        echo "FAIL: $archivePath - Failed to extract zst archive"
+                        logDebug "Failed to extract zst archive with zstd or 7z"
+                        return 1
+                    }
+                    logDebug "Extracted zst archive with 7z"
+                }
+            fi
+            ;;
+        *.rar)
+            checkTool unrar || checkTool 7z || {
+                echo "FAIL: $archivePath - neither unrar nor 7z available"
+                return 1
+            }
+            if checkTool unrar; then
+                unrar x -idq "$archivePath" "$tempDir" 2>/dev/null || {
+                    checkTool 7z && 7z x -o"$tempDir" "$archivePath" >/dev/null 2>&1 || {
+                        echo "FAIL: $archivePath - Failed to extract rar archive"
+                        logDebug "Failed to extract rar archive with unrar or 7z"
+                        return 1
+                    }
+                    logDebug "Extracted rar archive with 7z"
+                }
+            else
+                7z x -o"$tempDir" "$archivePath" >/dev/null 2>&1 || {
+                    echo "FAIL: $archivePath - Failed to extract rar archive"
+                    logDebug "Failed to extract rar archive with 7z"
+                    return 1
+                }
+            fi
+            ;;
+        *)
+            echo "FAIL: $archivePath - Unsupported archive format"
+            logDebug "Unsupported archive format: $archivePath"
+            return 1
+            ;;
+    esac
+    logDebug "Successfully extracted archive: $archivePath"
+    return 0
+}
+
+# Function to test a binary
+testBinary() {
+    binaryPath="$1"
+    sourcePath="$2"
+    binaryArgs="$3"
+    displayPath="$4"
+    logDebug "Testing binary: $binaryPath from $sourcePath with args: $binaryArgs"
+    # Check if file exists
+    if [ ! -f "$binaryPath" ]; then
+        echo "FAIL: $displayPath - Binary not found"
+        logDebug "Binary $binaryPath not found"
+        return 1
+    fi
+
+    # Ensure binary is executable
+    logDebug "Making binary executable: $binaryPath"
+    chmod +x "$binaryPath" 2>/dev/null || {
+        echo "FAIL: $displayPath - Cannot make binary executable"
+        logDebug "Failed to make binary executable: $binaryPath"
+        return 1
+    }
+
+    # Attempt to run the binary and capture output
+    logDebug "Running binary: $binaryPath $binaryArgs"
+    if [ -n "$binaryArgs" ]; then
+        # Use eval to handle quoted arguments properly, capture output
+        output=$(eval "$binaryPath $binaryArgs" 2>&1)
+        status=$?
+    else
+        # Try --version first, then no args, capture output
+        output=$("$binaryPath" --version 2>&1) || output=$("$binaryPath" 2>&1)
+        status=$?
+    fi
+
+    # Check for specific errors (segfault, oops, panic)
+    case "$output" in
+        *[Ss]egmentation\ [Ff]ault* | *segfault* | *[Oo]ops* | *[Pp]anic*)
+            echo "FAIL: $displayPath - Binary failed with error: $output"
+            logDebug "Binary $binaryPath failed with error: $output"
+            return 1
+            ;;
+        *)
+            echo "SUCCESS: $displayPath - Binary runs successfully (exit code: $status)"
+            logDebug "Binary $binaryPath ran successfully with exit code: $status"
+            logDebug "Output: $output"
+            return 0
+            ;;
+    esac
+}
+
+# Main function
+main() {
+    # Default binary name
+    binaryName="a.out"
+    binaryArgs=""
+    paths=""
+    argCount=0
+
+    logDebug "Parsing command-line arguments"
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --binary)
+                if [ $# -lt 2 ]; then
+                    printUsage
+                fi
+                binaryName="$2"
+                logDebug "Set binaryName to $binaryName"
+                shift 2
+                ;;
+            --binary-args)
+                if [ $# -lt 2 ]; then
+                    printUsage
+                fi
+                binaryArgs="$2"
+                logDebug "Set binaryArgs to $binaryArgs"
+                shift 2
+                ;;
+            --help|-h)
+                logDebug "Displaying usage information"
+                printUsage
+                ;;
+            *)
+                paths="$paths $1"
+                argCount=$((argCount + 1))
+                logDebug "Added path: $1"
+                shift
+                ;;
+        esac
+    done
+
+    # Check if at least one path is provided
+    if [ $argCount -eq 0 ]; then
+        logDebug "No paths provided, showing usage"
+        printUsage
+    fi
+
+    # Track results
+    successCount=0
+    failCount=0
+    logDebug "Starting processing with successCount=0, failCount=0"
+
+    # Process each path
+    for path in $paths; do
+        logDebug "Processing path: $path"
+        if [ ! -e "$path" ]; then
+            echo "FAIL: $path - Path does not exist"
+            logDebug "Path $path does not exist"
+            failCount=$((failCount + 1))
+            continue
+        fi
+
+        if [ -d "$path" ]; then
+            # If it's a directory, search for the binary
+            logDebug "Searching for $binaryName in directory $path"
+            binaryPath=$(find "$path" -type f -name "$binaryName" 2>/dev/null | head -1)
+            if [ -n "$binaryPath" ]; then
+                testBinary "$binaryPath" "$path" "$binaryArgs" "$path/$binaryName"
+                if [ $? -eq 0 ]; then
+                    successCount=$((successCount + 1))
+                    logDebug "Incremented successCount to $successCount"
+                else
+                    failCount=$((failCount + 1))
+                    logDebug "Incremented failCount to $failCount"
+                fi
+            else
+                echo "FAIL: $path - Binary $binaryName not found in directory"
+                logDebug "Binary $binaryName not found in $path"
+                failCount=$((failCount + 1))
+                logDebug "Incremented failCount to $failCount"
+            fi
+        elif isArchive "$path"; then
+            # If it's an archive, extract to a temp directory and test
+            logDebug "Creating temporary directory for archive $path"
+            tempDir=$(mktemp -d 2>/dev/null || {
+                echo "FAIL: $path - Cannot create temporary directory"
+                logDebug "Failed to create temporary directory for $path"
+                failCount=$((failCount + 1))
+                continue
+            })
+            if extractArchive "$path" "$tempDir"; then
+                logDebug "Searching for $binaryName in extracted archive $tempDir"
+                binaryPath=$(find "$tempDir" -type f -name "$binaryName" 2>/dev/null | head -1)
+                if [ -n "$binaryPath" ]; then
+                    # Compute relative path within archive for display
+                    relativePath=$(echo "$binaryPath" | sed "s|^$tempDir/||")
+                    displayPath="$path/$relativePath"
+                    testBinary "$binaryPath" "$path" "$binaryArgs" "$displayPath"
+                    if [ $? -eq 0 ]; then
+                        successCount=$((successCount + 1))
+                        logDebug "Incremented successCount to $successCount"
+                    else
+                        failCount=$((failCount + 1))
+                        logDebug "Incremented failCount to $failCount"
+                    fi
+                else
+                    echo "FAIL: $path - Binary $binaryName not found in archive"
+                    logDebug "Binary $binaryName not found in $tempDir"
+                    failCount=$((failCount + 1))
+                    logDebug "Incremented failCount to $failCount"
+                fi
+            else
+                failCount=$((failCount + 1))
+                logDebug "Incremented failCount to $failCount after extraction failure"
+            fi
+            # Clean up temporary directory if it exists
+            if [ -d "$tempDir" ]; then
+                logDebug "Cleaning up temporary directory: $tempDir"
+                rm -rf "$tempDir" 2>/dev/null
+            fi
+        elif [ -f "$path" ] && [ "$(basename "$path")" = "$binaryName" ]; then
+            # If it's a single file matching the binary name
+            logDebug "Testing single binary file: $path"
+            testBinary "$path" "$path" "$binaryArgs" "$path"
+            if [ $? -eq 0 ]; then
+                successCount=$((successCount + 1))
+                logDebug "Incremented successCount to $successCount"
+            else
+                failCount=$((failCount + 1))
+                logDebug "Incremented failCount to $failCount"
+            fi
+        else
+            echo "FAIL: $path - Not a directory, archive, or matching binary"
+            logDebug "$path is neither a directory, archive, nor matching binary"
+            failCount=$((failCount + 1))
+            logDebug "Incremented failCount to $failCount"
+        fi
+    done
+
+    # Summary
+    echo "-------------------"
+    echo "Summary:"
+    echo "Successful runs: $successCount"
+    echo "Failed runs: $failCount"
+    logDebug "Final summary: successCount=$successCount, failCount=$failCount"
+    exit $failCount
+}
+
+# Run main
+main "$@"
