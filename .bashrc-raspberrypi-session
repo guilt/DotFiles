@@ -1,0 +1,5 @@
+# ~/.bashrc-raspberrypi-session
+# shellcheck disable=SC2148
+
+# Raspberry Pi Setup
+which neofetch >/dev/null 2>&1 && neofetch --package_managers off --disable packages

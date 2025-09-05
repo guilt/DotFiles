@@ -41,7 +41,7 @@ function our_watch() {
 		clear
 		echo "Every $SLEEP s."
 		"$@"
-		sleep $SLEEP
+		sleep "$SLEEP"
 	done	
 }
 

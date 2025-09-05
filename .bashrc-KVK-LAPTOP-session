@@ -1,0 +1,5 @@
+# ~/.bashrc-KVK-LAPTOP-session
+# shellcheck disable=SC2148
+
+# KVK-LAPTOP setup
+which neofetch >/dev/null 2>&1 && neofetch --package_managers off --disable packages

@@ -1,0 +1,6 @@
+# ~/.bashrc-localhost-session
+# shellcheck disable=SC2148
+
+# localhost setup
+echo ""
+which neofetch >/dev/null 2>&1 && neofetch --package_managers off --disable packages

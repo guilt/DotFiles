@@ -1,0 +1,22 @@
+# ~/.bashrc-android
+# shellcheck disable=SC2148,SC2034,SC1090,SC1091,SC2236
+
+#Linux setup
+alias open=xdg-open
+
+export LOCAL=$HOME/.local
+PATH=$PATH:$LOCAL/bin
+
+export GOPATH=$HOME/.go
+PATH=$PATH:$GOPATH/bin
+
+export CARGO_HOME=$HOME/.cargo
+[ -f "${CARGO_HOME}/env" ] && source "${CARGO_HOME}/env"
+
+export PYTHON_HOME=~/.python
+export VIRTUAL_ENV_DISABLE_PROMPT=1
+[ -f "${PYTHON_HOME}/bin/activate" ] && source "${PYTHON_HOME}/bin/activate"
+
+# OpenCL and Other System Libs
+export LD_LIBRARY_PATH=/system/vendor/lib64:$LD_LIBRARY_PATH
+

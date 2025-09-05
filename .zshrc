@@ -5,6 +5,14 @@
 if [ -z "$ZSH" ] ; then
 export ZSH=true
 
+if [ -f /etc/zshenv ]; then
+	. /etc/zshenv
+fi
+
+if [ -f "$HOME/.bashrc" ]; then
+	. "$HOME/.bashrc"
+fi
+
 #Add Oh My ZSH.
 #Session Start
 case "$-" in
@@ -18,14 +26,6 @@ case "$-" in
 	fi
 	;;
 esac
-fi
-
-if [ -f /etc/zshenv ]; then
-	. /etc/zshenv
-fi
-
-if [ -f "$HOME/.bashrc" ]; then
-	. "$HOME/.bashrc"
 fi
 
 ZSH=
