@@ -47,6 +47,10 @@ case "$-" in
 		;;
 esac
 
+if [ -f "$HOME/.bashrc-$HOSTNAME-secrets" ]; then
+  . "$HOME/.bashrc-$HOSTNAME-secrets"
+fi
+
 #Set Bash Prompt
 [ -z "$BASH_VERSION" ] || PS1=' \W >> '
 

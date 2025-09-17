@@ -1,0 +1,22 @@
+# Dotfiles .gitignore
+*
+
+# Include specific dotfiles (uncomment and modify as needed)
+!.bashrc*
+!.zshrc
+!.vimrc
+!.gitconfig
+!.gitignore
+
+# Ignore secrets
+.bashrc-*-secrets
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db
+
+# Ignore editor files
+*.swp
+*.s
+*.tmp
+*.bak
