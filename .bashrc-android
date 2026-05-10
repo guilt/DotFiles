@@ -12,6 +12,7 @@ PATH=$PATH:$GOPATH/bin
 
 export CARGO_HOME=$HOME/.cargo
 [ -f "${CARGO_HOME}/env" ] && source "${CARGO_HOME}/env"
+[ -d "${CARGO_HOME}/bin" ] && PATH=$PATH:"${CARGO_HOME}/bin"
 
 export PYTHON_HOME=~/.python
 export VIRTUAL_ENV_DISABLE_PROMPT=1
