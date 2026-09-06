@@ -8,6 +8,10 @@
 !.gitconfig
 !.gitignore
 
+# Include executable helper scripts
+!bin/
+!bin/go
+
 # Ignore secrets
 .bashrc-*-secrets
 

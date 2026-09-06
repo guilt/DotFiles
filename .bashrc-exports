@@ -28,6 +28,14 @@ LIBRARY_PATH=$LOCAL_LIBRARY_PATH:$LIBRARY_PATH
 LD_LIBRARY_PATH=$LOCAL_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
 DYLD_LIBRARY_PATH=$LOCAL_DYLD_LIBRARY_PATH:$DYLD_LIBRARY_PATH
 
+# proot bind-mounts a glibc libdir onto /lib. bionic's libc is named libc.so, and
+# /lib/libc.so is a GNU ld script (not ELF), so the dynamic linker fails whenever
+# /lib:/usr/lib:/usr/libexec sit on LD_LIBRARY_PATH. Drop them when that is present.
+if [ "$OSTYPE" = "android" -a -f /lib/libc.so ]; then
+	LD_LIBRARY_PATH=${LD_LIBRARY_PATH%:/lib:/usr/lib:/usr/libexec}
+	DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH%:/lib:/usr/lib:/usr/libexec}
+fi
+
 export C_INCLUDE_PATH CPLUS_INCLUDE_PATH 
 export LIBRARY_PATH LD_LIBRARY_PATH DYLD_LIBRARY_PATH
 

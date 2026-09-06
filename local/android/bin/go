@@ -1,0 +1,25 @@
+#!/bin/sh
+# Termux `go` (golang package) is a trimmed build: it needs GOROOT exported and,
+# under proot, `-e` as the first argument (otherwise /proc/self/exe translation
+# breaks GOROOT detection and even `go version` prints usage). Both fixes are
+# applied ONLY when the plain invocation demonstrably fails, so this wrapper is
+# a no-op pass-through if upstream go ever works normally on Termux again.
+GO=/data/data/com.termux/files/usr/lib/go/bin/go
+GOROOT=/data/data/com.termux/files/usr/lib/go
+export GOROOT
+
+if [ ! -x "$GO" ]; then
+    GOROOT="${GOROOT:-}"
+    unset GOROOT
+    export -n GOROOT 2>/dev/null || unset GOROOT
+    exec go "$@"
+fi
+
+if "$GO" version >/dev/null 2>&1; then
+    exec "$GO" "$@"
+fi
+
+if [ "${1:-}" = "-e" ]; then
+    exec "$GO" "$@"
+fi
+exec "$GO" -e "$@"
