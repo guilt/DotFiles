@@ -1,0 +1,11 @@
+# ~/.bashrc-truenas
+# shellcheck disable=SC2148,SC1090,SC2034
+
+# TrueNAS Setup
+export PATH=$PATH:~/WS/NASTools/
+
+# Temporary Directory
+TMPDIR=${TMPDIR:-$HOME/.tmp}
+BUN_TMPDIR=$TMPDIR
+mkdir -p "${TMPDIR}"
+export TMPDIR BUN_TMPDIR
