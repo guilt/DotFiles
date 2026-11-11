@@ -1,0 +1,19 @@
+# ~/.bashrc-KVK-VZ
+# shellcheck disable=SC2148,SC1090,SC2034
+
+# KVK-VZ setup
+export MAKEFLAGS=j65
+
+# CUDA
+export CUDA_HOME=/usr/local/cuda
+export PATH=$CUDA_HOME/bin:$PATH
+export LIBRARY_PATH=$CUDA_HOME/lib64:${LIBRARY_PATH}
+export LD_LIBRARY_PATH=$CUDA_HOME/lib64:${LD_LIBRARY_PATH}
+export C_INCLUDE_PATH=$CUDA_HOME/include:${C_INCLUDE_PATH}
+export CPLUS_INCLUDE_PATH=$CUDA_HOME/include}:${CPLUS_INCLUDE_PATH}
+export MANPATH=$CUDA_HOME/share/man:${MANPATH}
+export INFOPATH=$CUDA_HOME/share/info:${INFOPATH}
+
+find "$HOME/.bashrc-companies/" -type f | while read -r companyFile; do
+	source "$companyFile"
+done

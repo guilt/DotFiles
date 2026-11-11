@@ -1,5 +1,0 @@
-# ~/.bashrc-KVK-PC-session
-# shellcheck disable=SC2148
-
-# KVK-PC setup
-which neofetch >/dev/null 2>&1 && neofetch --package_managers off --disable packages

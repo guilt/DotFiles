@@ -6,6 +6,9 @@ export PATH=$PATH:~/WS/NASTools/
 
 # Temporary Directory
 TMPDIR=${TMPDIR:-$HOME/.tmp}
-BUN_TMPDIR=$TMPDIR
 mkdir -p "${TMPDIR}"
-export TMPDIR BUN_TMPDIR
+export TMPDIR
+
+# Temporary Directory for Bun
+BUN_TMPDIR=$TMPDIR
+export BUN_TMPDIR
