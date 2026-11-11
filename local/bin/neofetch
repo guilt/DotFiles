@@ -971,7 +971,23 @@ get_distro() {
 
     case $os in
         Linux|BSD|MINIX)
-            if [[ -f /bedrock/etc/bedrock-release && $PATH == */bedrock/cross/* ]]; then
+            # TrueNAS CORE is FreeBSD based, TrueNAS SCALE is Debian based.
+            if [[ -f /etc/version && $(< /etc/version) == *TrueNAS* ]]; then
+                case $distro_shorthand in
+                    on|tiny) distro="TrueNAS CORE" ;;
+                    *)
+                        distro="TrueNAS CORE $(< /etc/version)"
+                        distro=${distro/TrueNAS-}
+                esac
+
+            elif [[ -f /etc/version && -f /etc/os-release ]] && \
+                 [[ $kernel_version == *truenas* && $(< /etc/os-release) == *"ID=debian"* ]]; then
+                case $distro_shorthand in
+                    on|tiny) distro="TrueNAS SCALE" ;;
+                    *)       distro="TrueNAS SCALE $(< /etc/version)"
+                esac
+
+            elif [[ -f /bedrock/etc/bedrock-release && $PATH == */bedrock/cross/* ]]; then
                 case $distro_shorthand in
                     on|tiny) distro="Bedrock Linux" ;;
                     *) distro=$(< /bedrock/etc/bedrock-release)
@@ -10275,6 +10291,30 @@ Nsyh+-..+y+-   yMMMMd   :mMM+
          -oNMMMMMMMMMMmy+.`
            `:yNMMMds/.`
               .//`
+EOF
+        ;;
+
+        "TrueNAS"*)
+            set_colors 39 32 248
+            read -rd '' ascii_data <<'EOF'
+${c1}                      ++  ${c2}++
+                  ${c1}++++++  ${c2}++++++
+               ${c1}+++++++++  ${c2}+++++++++
+               ${c1}+++++++      ${c2}+++++++
+        ${c1}+++  ${c2}+++  ${c1}+  ${c3}--------${c1}  ${c2}+  ${c1}+++  ${c2}+++
+     ${c1}++++++  ${c2}++++++   ${c3}------${c1}   ++++++  ${c2}++++++
+   ${c1}++++++++  ${c2}++++++++++    ${c1}++++++++++  ${c2}++++++++
+  ${c1}+++++++  ${c3}--${c1}  ${c2}+++++++      ${c1}+++++++  ${c3}--${c1}  ${c2}+++++++
+${c2}+++  ${c1}+  ${c3}--------${c1}  ${c2}+  ${c1}+++  ${c2}+++  ${c1}+  ${c3}--------${c1}  ${c2}+  ${c1}+++
+${c2}++++++  ${c3}--------${c1}  ++++++  ${c2}++++++  ${c3}--------${c1}  ++++++
+${c2}++++++++++     ${c1}+++++++++  ${c2}+++++++++     ${c1}++++++++++
+  ${c2}+++++++++    ${c1}+++++++  ${c3}--${c1}  ${c2}+++++++    ${c1}+++++++++
+      ${c2}+++++  +++     ${c3}--------${c1}     +++  +++++
+         ${c2}++  +++++++  ${c3}------${c1}  +++++++  ++
+             ${c2}++++++++++    ${c1}++++++++++
+                ${c2}++++++++  ${c1}++++++++
+                   ${c2}+++++  ${c1}+++++
+                      ${c2}++  ${c1}++
 EOF
         ;;
 
